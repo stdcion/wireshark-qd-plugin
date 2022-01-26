@@ -1,6 +1,7 @@
 package.prepend_path("qd_proto")
 local settings = require("settings")
 local fields = require("fields")
+local qd = require("dissectors/qd")
 
 -- Create protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
@@ -46,9 +47,12 @@ function qd_proto.dissector(tvb, pinfo, tree)
 
     local byte_processed = 0
     while byte_processed < len do
-        -- ToDo Add QD message dissector!
-        local result = 0
+        -- Dissect QD message.
+        local result, qd_message, qd_subtree =
+            qd.dissect(qd_proto, tvb, byte_processed, pinfo, tree)
         if result > 0 then
+            -- This is QD message.
+            pinfo.cols.protocol = qd_proto.name
             -- Try find next QD message in this package.
             byte_processed = byte_processed + result
         elseif result == 0 then
