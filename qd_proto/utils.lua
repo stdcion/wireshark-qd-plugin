@@ -166,8 +166,7 @@ function utils.is_empty_str(str) return str == nil or str == '' end
 -- @param path Path to file.
 -- @return Filename.
 function utils.get_filename(path)
-    local start = path:find('[%w%s!-={-|]+[_%.].+')
-    return path:sub(start, #path)
+    return path:match("^.+/(.+)$")
 end
 
 return utils
