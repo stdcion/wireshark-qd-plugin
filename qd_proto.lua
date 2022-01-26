@@ -43,7 +43,7 @@ end
 function qd_proto.dissector(tvb, pinfo, tree)
     -- Do not process empty packages.
     local len = tvb:len()
-    if len == 0 then return end
+    if len == 0 then return 0 end
 
     local byte_processed = 0
     while byte_processed < len do
