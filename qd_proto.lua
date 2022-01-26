@@ -19,8 +19,8 @@ end
 -- Called Wireshark when user change preference.
 function qd_proto.prefs_changed()
     -- Enable/Disable.
-    if settings.is_enabled ~= qd_proto.prefs.enabled then
-        settings.is_enabled = qd_proto.prefs.enabled
+    if settings.is_enabled ~= qd_proto.prefs.is_enabled then
+        settings.is_enabled = qd_proto.prefs.is_enabled
         if settings.is_enabled == true then
             settings.enable_dissector(qd_proto)
         else
