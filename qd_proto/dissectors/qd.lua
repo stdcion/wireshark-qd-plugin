@@ -85,21 +85,21 @@ function qd.check_msg(buf, off)
         return 0
     end
 
-    local result = check_input_buf_cut_off(buf, off)
+    result = check_input_buf_cut_off(buf, off)
     if (result == false) then
         dbg.warn(dbg.file(), dbg.line(),
                  "Captured packet was shorter than original, can't reassemble.")
         return 0
     end
 
-    local result = check_compact_len(buf, off)
+    result = check_compact_len(buf, off)
     if (result == false) then
         dbg.info(dbg.file(), dbg.line(),
                  "Not enough buffer length for get compact_len.")
         return -DESEGMENT_ONE_MORE_SEGMENT
     end
 
-    local result = check_msg_len(buf, off)
+    result = check_msg_len(buf, off)
     if (result == false) then
         dbg.warn(dbg.file(), dbg.line(), "Bad message length.")
         return 0
