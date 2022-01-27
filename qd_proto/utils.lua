@@ -45,11 +45,13 @@ function utils.get_compact_len(n)
 end
 
 -- Reads an integer value from the data input in a compact format.
+-- @note If actual encoded value does not fit into an int (32-bit) data type,
+--       then it is truncated to int value (only lower 32 bits are returned)
 -- @param buf Input buffer.
 -- @param off Offset in input buffer.
 -- @return value, size compact length in bytes - if read success;
 --         nil, nil - if cannot read int value from buffer
---         (buffer is not long enough or compact length is more then 4 byte).
+--         (buffer is not long enough).
 function utils.read_compact_int(buf, off)
     if (off >= buf:len()) then return nil; end
     local n = buf(off, 1):uint()
@@ -92,7 +94,7 @@ end
 -- @param off Offset in input buffer.
 -- @return value, size compact length in bytes - if read success;
 --         nil, nil - if cannot read int value from buffer
---         (buffer is not long enough or compact length is more then 4 byte).
+--         (buffer is not long enough).
 function utils.read_compact_long(buf, off)
     if (off >= buf:len()) then return nil; end
     local n = buf(off, 1):uint()
