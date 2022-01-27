@@ -146,29 +146,29 @@ end
 
 -- Dissect input message.
 -- @param proto Protocol object.
--- @param tvb Input buffer.
+-- @param tvb_buf Input buffer.
 -- @param off Offset in input buffer
--- @param pinfo Package info.
+-- @param packet_info Packet information.
 -- @param tree Tree for display fields in Wireshark.
 -- @return dissection_result.
-function qd.dissect(proto, tvb, off, pinfo, tree)
+function qd.dissect(proto, tvb_buf, off, packet_info, tree)
     -- Check input buf.
-    dissection_result.qd_full_message_len = qd.check_msg(tvb, off)
+    dissection_result.qd_full_message_len = qd.check_msg(tvb_buf, off)
     if (dissection_result.qd_full_message_len <= 0) then
         return dissection_result
     end
 
     -- Get message length.
     local len_off = off
-    local len, len_size = utils.read_compact_int(tvb, off)
+    local len, len_size = utils.read_compact_int(tvb_buf, off)
 
     -- If message length zero, then this HEARTBEAT.
     if (len == 0) then
         -- Fill tree.
-        local subtree = tree:add(proto, tvb(off,
-                                            dissection_result.qd_full_message_len),
+        local subtree = tree:add(proto, tvb_buf(off,
+                                                dissection_result.qd_full_message_len),
                                  "HEARTBEAT_ZERO_LENGTH")
-        subtree:add(fields.qd.msg_len, tvb(len_off, len_size), len)
+        subtree:add(fields.qd.msg_len, tvb_buf(len_off, len_size), len)
         subtree:add(fields.qd.msg_type, fields.message_type.HEARTBEAT)
         dissection_result.subtree = subtree
         return dissection_result
@@ -177,24 +177,24 @@ function qd.dissect(proto, tvb, off, pinfo, tree)
     -- Get message type.
     local type_off = len_off + len_size
     local type_size = 1
-    local type = get_msg_type(tvb, type_off)
+    local type = get_msg_type(tvb_buf, type_off)
     if (utils.is_empty_str(type.val_str) == true) then
         dbg.error(dbg.file(), dbg.line(), "Unknown message type.")
         return 0
     end
 
     -- Fill tree.
-    local subtree = tree:add(proto,
-                             tvb(off, dissection_result.qd_full_message_len),
+    local subtree = tree:add(proto, tvb_buf(off,
+                                            dissection_result.qd_full_message_len),
                              type.val_str)
-    subtree:add(fields.qd.msg_len, tvb(len_off, len_size), len)
-    subtree:add(fields.qd.msg_type, tvb(type_off, type_size), type.val_uint)
+    subtree:add(fields.qd.msg_len, tvb_buf(len_off, len_size), len)
+    subtree:add(fields.qd.msg_type, tvb_buf(type_off, type_size), type.val_uint)
 
     -- Creating a QD message for subsequent dissectors.
     local data_off = type_off + type_size
     local data_size = len - type_size
     qd_message.type = type
-    qd_message.data = tvb(data_off, data_size)
+    qd_message.data = tvb_buf(data_off, data_size)
 
     -- Formation dissection result
     dissection_result.qd_message = qd_message
