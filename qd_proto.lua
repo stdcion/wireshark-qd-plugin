@@ -58,7 +58,7 @@ function qd_proto.dissector(tvb_buf, packet_info, tree)
     while byte_processed < len do
         -- Dissect QD message.
         local result = qd.dissect(qd_proto, tvb_buf, byte_processed,
-                                  packet_info, tree).qd_full_message_len
+                                  packet_info, tree).qd_full_msg_len
         if result > 0 then
             -- This is QD message.
             packet_info.cols.protocol = qd_proto.name
