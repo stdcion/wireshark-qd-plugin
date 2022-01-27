@@ -103,6 +103,7 @@ function utils.read_compact_long(buf, off)
     if (compact_len > remainder_len) then return nil; end
 
     if (compact_len <= 4) then
+        -- Length and offset have been checked above.
         n = Int64(utils.read_compact_int(buf, off), 0)
         n = n:lshift(32)
         n = n:arshift(32)
