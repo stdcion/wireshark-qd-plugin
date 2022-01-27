@@ -48,8 +48,8 @@ function qd_proto.dissector(tvb, pinfo, tree)
     local byte_processed = 0
     while byte_processed < len do
         -- Dissect QD message.
-        local result, qd_message, qd_subtree =
-            qd.dissect(qd_proto, tvb, byte_processed, pinfo, tree)
+        local result = qd.dissect(qd_proto, tvb, byte_processed, pinfo, tree)
+                           .qd_full_message_len
         if result > 0 then
             -- This is QD message.
             pinfo.cols.protocol = qd_proto.name

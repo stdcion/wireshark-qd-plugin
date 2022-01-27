@@ -7,6 +7,39 @@ local dbg = require("dbg")
 
 local qd = {}
 
+-- QD full message size.
+--  0  - this not QD message;
+-- <0  - size input buffer not enough for assemble
+--       full QD message (negative num bytes, num which are missing);
+-- >0, - full size QD message.
+local qd_full_message_len = nil
+
+-- Type of QD message.
+local qd_message_type = {
+    -- Message type num.
+    val_uint = nil,
+    -- String representation message type.
+    val_str = nil
+}
+
+-- QD message.
+local qd_message = {
+    -- Type of QD message.
+    qd_message_type = nil,
+    -- Buf range with QD message data.
+    data = nil
+}
+
+-- Result dissection message.
+local dissection_result = {
+    -- QD full message size.
+    qd_full_message_len = 0,
+    -- QD message (may be nil).
+    qd_message = nil,
+    -- Subtree for display fields in Wireshark (may be nil).
+    subtree = nil
+}
+
 -- Check length input buffer.
 -- @param buf Input buffer.
 -- @param off Offset in input buffer.
@@ -61,23 +94,18 @@ end
 -- Get message type.
 -- @param buf Input buffer.
 -- @param off Offset to message type.
--- @return Message type.
+-- @return qd_message_type.
 local function get_msg_type(buf, off)
-    local type = {}
-    -- Message type num.
-    type.val_uint = buf(off, 1):uint()
-    -- String representation message type.
-    type.val_str = utils.enum_val_to_str(fields.message_type, type.val_uint)
-    return type
+    qd_message_type.val_uint = buf(off, 1):uint()
+    qd_message_type.val_str = utils.enum_val_to_str(fields.message_type,
+                                                    qd_message_type.val_uint)
+    return qd_message_type
 end
 
 -- Check receive message.
 -- @param buf Input buffer.
 -- @param off Offset in input buffer.
--- @return  0  - this not QD message;
---         <0  - size input buffer not enough for assemble
---               full QD message (negative num bytes, num which are missing);
---         >0, - full size QD message.
+-- @return qd_full_message_len.
 function qd.check_msg(buf, off)
     local result = check_input_buf_len(buf, off)
     if (result == false) then
@@ -107,13 +135,13 @@ function qd.check_msg(buf, off)
 
     local msg_len, msg_len_size = utils.read_compact_int(buf, off)
     local buf_len = buf:len() - off
-    local full_msg_len = msg_len_size + msg_len
-    if (full_msg_len > buf_len) then
+    qd_full_message_len = msg_len_size + msg_len
+    if (qd_full_message_len > buf_len) then
         dbg.info(dbg.file(), dbg.line(), "Need more data for build message.")
-        return -(full_msg_len - buf_len)
+        return -(qd_full_message_len - buf_len)
     end
 
-    return full_msg_len
+    return qd_full_message_len
 end
 
 -- Dissect input message.
@@ -122,14 +150,13 @@ end
 -- @param off Offset in input buffer
 -- @param pinfo Package info.
 -- @param tree Tree for display fields in Wireshark.
--- @return  0  - this not QD message;
---         <0  - size input buffer not enough for assemble
---               full QD message (negative num bytes, num which are missing);
---         >0, - full size QD message, message data (may be nil) and subtree.
+-- @return dissection_result.
 function qd.dissect(proto, tvb, off, pinfo, tree)
     -- Check input buf.
-    local full_msg_len = qd.check_msg(tvb, off)
-    if (full_msg_len <= 0) then return full_msg_len end
+    dissection_result.qd_full_message_len = qd.check_msg(tvb, off)
+    if (dissection_result.qd_full_message_len <= 0) then
+        return dissection_result
+    end
 
     -- Get message length.
     local len_off = off
@@ -138,11 +165,13 @@ function qd.dissect(proto, tvb, off, pinfo, tree)
     -- If message length zero, then this HEARTBEAT.
     if (len == 0) then
         -- Fill tree.
-        local subtree = tree:add(proto, tvb(off, full_msg_len),
+        local subtree = tree:add(proto, tvb(off,
+                                            dissection_result.qd_full_message_len),
                                  "HEARTBEAT_ZERO_LENGTH")
         subtree:add(fields.qd.msg_len, tvb(len_off, len_size), len)
         subtree:add(fields.qd.msg_type, fields.message_type.HEARTBEAT)
-        return full_msg_len, nil, subtree
+        dissection_result.subtree = subtree
+        return dissection_result
     end
 
     -- Get message type.
@@ -155,15 +184,22 @@ function qd.dissect(proto, tvb, off, pinfo, tree)
     end
 
     -- Fill tree.
-    local subtree = tree:add(proto, tvb(off, full_msg_len), type.val_str)
+    local subtree = tree:add(proto,
+                             tvb(off, dissection_result.qd_full_message_len),
+                             type.val_str)
     subtree:add(fields.qd.msg_len, tvb(len_off, len_size), len)
     subtree:add(fields.qd.msg_type, tvb(type_off, type_size), type.val_uint)
 
     -- Creating a QD message for subsequent dissectors.
     local data_off = type_off + type_size
     local data_size = len - type_size
-    local qd_message = {type = type, data = tvb(data_off, data_size)}
-    return full_msg_len, qd_message, subtree
+    qd_message.type = type
+    qd_message.data = tvb(data_off, data_size)
+
+    -- Formation dissection result
+    dissection_result.qd_message = qd_message
+    dissection_result.subtree = subtree
+    return dissection_result
 end
 
 return qd
