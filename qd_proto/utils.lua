@@ -56,8 +56,8 @@ function utils.read_compact_int(buf, off)
     if (off >= buf:len()) then return nil; end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
-    local buf_len = buf:len() - off
-    if (compact_len > buf_len) then return nil; end
+    local remainder_len = buf:len() - off
+    if (compact_len > remainder_len) then return nil; end
 
     off = off + 1
     if compact_len == 1 then
@@ -99,8 +99,8 @@ function utils.read_compact_long(buf, off)
     if (off >= buf:len()) then return nil; end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
-    local buf_len = buf:len() - off
-    if (compact_len > buf_len) then return nil; end
+    local remainder_len = buf:len() - off
+    if (compact_len > remainder_len) then return nil; end
 
     if (compact_len <= 4) then
         n = Int64(utils.read_compact_int(buf, off), 0)
