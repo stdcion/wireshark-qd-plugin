@@ -45,17 +45,19 @@ function utils.get_compact_len(n)
 end
 
 -- Reads an integer value from the data input in a compact format.
+-- @note If actual encoded value does not fit into an int (32-bit) data type,
+--       then it is truncated to int value (only lower 32 bits are returned)
 -- @param buf Input buffer.
 -- @param off Offset in input buffer.
 -- @return value, size compact length in bytes - if read success;
 --         nil, nil - if cannot read int value from buffer
---         (buffer is not long enough or compact length is more then 4 byte).
+--         (buffer is not long enough).
 function utils.read_compact_int(buf, off)
     if (off >= buf:len()) then return nil; end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
-    local buf_len = buf:len() - off
-    if (compact_len > buf_len) then return nil; end
+    local remainder_len = buf:len() - off
+    if (compact_len > remainder_len) then return nil; end
 
     off = off + 1
     if compact_len == 1 then
@@ -92,15 +94,16 @@ end
 -- @param off Offset in input buffer.
 -- @return value, size compact length in bytes - if read success;
 --         nil, nil - if cannot read int value from buffer
---         (buffer is not long enough or compact length is more then 4 byte).
+--         (buffer is not long enough).
 function utils.read_compact_long(buf, off)
     if (off >= buf:len()) then return nil; end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
-    local buf_len = buf:len() - off
-    if (compact_len > buf_len) then return nil; end
+    local remainder_len = buf:len() - off
+    if (compact_len > remainder_len) then return nil; end
 
     if (compact_len <= 4) then
+        -- Length and offset have been checked above.
         n = Int64(utils.read_compact_int(buf, off), 0)
         n = n:lshift(32)
         n = n:arshift(32)
@@ -166,8 +169,7 @@ function utils.is_empty_str(str) return str == nil or str == '' end
 -- @param path Path to file.
 -- @return Filename.
 function utils.get_filename(path)
-    local start = path:find('[%w%s!-={-|]+[_%.].+')
-    return path:sub(start, #path)
+    return path:match("^.+/(.+)$")
 end
 
 return utils
