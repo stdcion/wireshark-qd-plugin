@@ -4,7 +4,7 @@ Lua plugin for Wireshark for parsing QD protocol.
 ## Installation
 Copy files (qd_proto.lua and qd_proto folder) to Wireshark *Lua Plugins* folder.
 Location *Lua Plugins* folder you can find out in Help->About Wireshark->Folders
-Its may be *"Global Lua Plugin"* or *"Personal Lua Plugin"*.
+Its may be *"Global Lua Plugin"* or *"Personal Lua Plugin"* (the user's personal folder is preferred, because it does not require administrator rights).
 
 ![About Wireshark](/doc/img/wireshark_about.png?raw=true)
 
@@ -26,6 +26,6 @@ Press right button on the packet and select "Decode As...". In the window that o
 
 ![Decode As...](/doc/img/wireshark_decode_as.png?raw=true)
 
-The plugin has some settings that are available by pressing the right button on packet.
+The plugin has some settings that are available by pressing the right button on packet. Warning, if you use "Decode As...", you cannot change "TCP port" or flag "Enabled" in plugin settings, Wireshark will overwrite these changes (other settings will be available), but this way to easier and fast then open Edit->Preferences->Protocols->QD and set TCP-port.
 
 ![Plugins preference](/doc/img/wireshark_plugin_settings.png?raw=true)
