@@ -1,9 +1,9 @@
 -- @file qd.lua
 -- @brief Dissector QD message.
-package.prepend_path("../")
-local utils = require("utils")
-local fields = require("fields")
-local dbg = require("dbg")
+package.prepend_path(Dir.global_plugins_path())
+local utils = require("qd_proto.utils")
+local fields = require("qd_proto.fields")
+local dbg = require("qd_proto.dbg")
 
 local qd = {}
 
