@@ -1,7 +1,7 @@
-package.prepend_path("qd_proto")
-local settings = require("settings")
-local fields = require("fields")
-local qd = require("dissectors/qd")
+package.prepend_path(Dir.global_plugins_path())
+local settings = require("qd_proto.settings")
+local fields = require("qd_proto.fields")
+local qd = require("qd_proto.dissectors.qd")
 
 -- Create protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
