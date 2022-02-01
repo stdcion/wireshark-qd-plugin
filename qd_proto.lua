@@ -2,11 +2,13 @@ package.prepend_path(Dir.global_plugins_path())
 local settings = require("qd_proto.settings")
 local utils = require("qd_proto.utils")
 local qd = require("qd_proto.dissectors.qd")
+local heartbeat = require("qd_proto.dissectors.heartbeat")
 
 -- Create protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
 -- Register fields for Wireshark.
 utils.append_to_table(qd_proto.fields, qd.fields)
+utils.append_to_table(qd_proto.fields, heartbeat.fields)
 
 -- Called Wireshark when plugin loading.
 function qd_proto.init()
@@ -39,6 +41,21 @@ function qd_proto.prefs_changed()
     end
 end
 
+-- Parsing QD message.
+-- @param proto Protocol object.
+-- @param type QD message type.
+-- @param tvb_buf Input buffer.
+-- @param packet_info Packet information.
+-- @param subtree Subtree for display fields in Wireshark
+--                (for concrete type message).
+local function parsing_message(proto, type, tvb_buf, packet_info, subtree)
+    if (type ~= nil and tvb_buf:len() ~= 0) then
+        if (type.val_uint == qd.type.HEARTBEAT) then
+            heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
+        end
+    end
+end
+
 -- Called Wireshark when package captured.
 -- @param tvb_buf Tvb represents the packet’s buffer. It is passed as an argument
 --        to dissectors, and can be used to extract information (via TvbRange)
@@ -58,13 +75,16 @@ function qd_proto.dissector(tvb_buf, packet_info, tree)
     while byte_processed < len do
         -- Dissect QD message.
         local result = qd.dissect(qd_proto, tvb_buf, byte_processed,
-                                  packet_info, tree).qd_full_msg_len
-        if result > 0 then
+                                  packet_info, tree)
+        if result.qd_full_msg_len > 0 then
             -- This is QD message.
             packet_info.cols.protocol = qd_proto.name
+            -- Parsing QD message.
+            parsing_message(qd_proto, result.qd_message.type,
+                            result.qd_message.data, packet_info, result.subtree)
             -- Try find next QD message in this package.
-            byte_processed = byte_processed + result
-        elseif result == 0 then
+            byte_processed = byte_processed + result.qd_full_msg_len
+        elseif result.qd_full_msg_len == 0 then
             -- Ignoring package.
             return 0
         else
@@ -73,7 +93,7 @@ function qd_proto.dissector(tvb_buf, packet_info, tree)
             packet_info.desegment_offset = byte_processed
             -- Estimated number of additional bytes required
             -- for completing the PDU.
-            packet_info.desegment_len = -result
+            packet_info.desegment_len = -result.qd_full_msg_len
             -- In this case return tvb length.
             return len
         end
