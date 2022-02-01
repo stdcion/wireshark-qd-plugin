@@ -37,6 +37,9 @@ heartbeat.fields = {
                                        "HAS_LAG_MARK", 4, nil, content.LAG_MARK),
     time_mills = ProtoField.int64("qd.heartbeat.time_mills",
                                   "Time Milliseconds", base.DEC),
+    time_utc = ProtoField.absolute_time("qd.heartbeat.time_utc", "Time UTC",
+                                        base.UTC),
+
     -- int32
     time_mark = ProtoField.int64("qd.heartbeat.time_mark", "Time Mark", base.DEC),
     -- int32
@@ -100,7 +103,17 @@ function heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
             dbg.error(dbg.file(), dbg.line(), "Can't read time_millis.")
             return
         end
+        -- Display in milliseconds 
         subtree:add(fields.time_mills, tvb_buf(off, sizeof), time_millis)
+
+        -- Convert to second.
+        local seconds = (time_millis / 1000):tonumber()
+        -- Get the remainder in nanoseconds
+        local nanoseconds_remainder = (time_millis % 1000):tonumber() * 1000000
+        -- Display in UTC time.
+        subtree:add(fields.time_utc, tvb_buf(off, sizeof),
+                    NSTime(seconds, nanoseconds_remainder))
+
         off = off + sizeof
     end
     if (has_time_mark(content_byte)) then
