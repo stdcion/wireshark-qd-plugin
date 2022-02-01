@@ -104,9 +104,7 @@ function utils.read_compact_long(buf, off)
 
     if (compact_len <= 4) then
         -- Length and offset have been checked above.
-        n = Int64(utils.read_compact_int(buf, off), 0)
-        n = n:lshift(32)
-        n = n:arshift(32)
+        n = utils.int_to_long(n)
         return n, compact_len
     end
 
@@ -136,9 +134,18 @@ function utils.read_compact_long(buf, off)
         n = buf(off, 4):uint()
         off = off + 4
     end
-    n = Int64(n, 0)
-    n = n:lshift(32) + buf(off, 4):int()
+    n = Int64(buf(off, 4):uint(), n)
     return n, compact_len
+end
+
+-- Convert int (32-bit signed) to long (64-bit signed).
+-- @param val int32 value.
+-- @return int64 value.
+function utils.int_to_long(val)
+    val = Int64(val, 0)
+    val = val:lshift(32)
+    val = val:arshift(32)
+    return val
 end
 
 -- Convert Enum table to String table.
@@ -157,6 +164,19 @@ end
 --         nil - if cannot convert.
 function utils.enum_val_to_str(enum, val)
     return utils.enum_tbl_to_str_tbl(enum)[val]
+end
+
+-- Append one table into second.
+-- @note Tables must have "numbered" keys.
+-- @param dst Destination table.
+-- @param src Source table.
+function utils.append_to_table(dst, src)
+    -- The first element has always index 1, not 0.
+    local n = #dst + 1
+    for _, field in pairs(src) do
+        dst[n] = field
+        n = n + 1
+    end
 end
 
 -- Check string for empty.
