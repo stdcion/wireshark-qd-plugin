@@ -41,14 +41,14 @@ function qd_proto.prefs_changed()
     end
 end
 
--- Parsing QD message.
+-- Parse QD message.
 -- @param proto Protocol object.
 -- @param type QD message type.
 -- @param tvb_buf Input buffer.
 -- @param packet_info Packet information.
 -- @param subtree Subtree for display fields in Wireshark
 --                (for concrete type message).
-local function parsing_message(proto, type, tvb_buf, packet_info, subtree)
+local function parse_message(proto, type, tvb_buf, packet_info, subtree)
     if (type ~= nil and tvb_buf:len() ~= 0) then
         if (type.val_uint == qd.type.HEARTBEAT) then
             heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
@@ -80,7 +80,7 @@ function qd_proto.dissector(tvb_buf, packet_info, tree)
             -- This is QD message.
             packet_info.cols.protocol = qd_proto.name
             -- Parsing QD message.
-            parsing_message(qd_proto, result.qd_message.type,
+            parse_message(qd_proto, result.qd_message.type,
                             result.qd_message.data, packet_info, result.subtree)
             -- Try find next QD message in this package.
             byte_processed = byte_processed + result.qd_full_msg_len
