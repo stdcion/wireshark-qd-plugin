@@ -2,12 +2,12 @@
 -- @brief Provides general utility functions for dissector.
 local utils = {}
 
--- @brief Compact Format
+-- @brief Compact Format.
 -- The Compact Format is a serialization format for integer numbers.
 -- It uses encoding scheme with variable-length two's complement
 -- big-endian format capable to encode 64-bits signed numbers.
 -- The following table defines used serial format (the first byte is given
--- in bits with 'x' representing payload bit; the remaining bytes are
+-- in bits with 'x' representing payload bit the remaining bytes are
 -- given in bit count):
 -- 0xxxxxxx     - for -64 to 64
 -- 10xxxxxx  8x - for -8192 to 8192
@@ -53,11 +53,11 @@ end
 --         nil, nil - if cannot read int value from buffer
 --         (buffer is not long enough).
 function utils.read_compact_int(buf, off)
-    if (off >= buf:len()) then return nil; end
+    if (off >= buf:len()) then return nil end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
     local remainder_len = buf:len() - off
-    if (compact_len > remainder_len) then return nil; end
+    if (compact_len > remainder_len) then return nil end
 
     off = off + 1
     if compact_len == 1 then
@@ -96,11 +96,11 @@ end
 --         nil, nil - if cannot read int value from buffer
 --         (buffer is not long enough).
 function utils.read_compact_long(buf, off)
-    if (off >= buf:len()) then return nil; end
+    if (off >= buf:len()) then return nil end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
     local remainder_len = buf:len() - off
-    if (compact_len > remainder_len) then return nil; end
+    if (compact_len > remainder_len) then return nil end
 
     if (compact_len <= 4) then
         -- Length and offset have been checked above.
