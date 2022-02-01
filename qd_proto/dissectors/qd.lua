@@ -2,10 +2,40 @@
 -- @brief Dissector QD message.
 package.prepend_path(Dir.global_plugins_path())
 local utils = require("qd_proto.utils")
-local fields = require("qd_proto.fields")
 local dbg = require("qd_proto.dbg")
 
 local qd = {}
+
+-- List of QD message type.
+qd.type = {
+    HEARTBEAT = 0,
+    DESCRIBE_PROTOCOL = 1,
+    DESCRIBE_RECORDS = 2,
+    PART = 4,
+    RAW_DATA = 5,
+    TICKER_DATA = 10,
+    TICKER_ADD_SUBSCRIPTION = 11,
+    TICKER_REMOVE_SUBSCRIPTION = 12,
+    STREAM_DATA = 15,
+    STREAM_ADD_SUBSCRIPTION = 16,
+    STREAM_REMOVE_SUBSCRIPTION = 17,
+    HISTORY_DATA = 20,
+    HISTORY_ADD_SUBSCRIPTION = 21,
+    HISTORY_REMOVE_SUBSCRIPTION = 22,
+    RMI_DESCRIBE_SUBJECT = 50,
+    RMI_DESCRIBE_OPERATION = 51,
+    RMI_REQUEST = 52,
+    RMI_CANCEL = 53,
+    RMI_RESULT = 54,
+    RMI_ERROR = 55
+}
+
+-- List fields of QD message.
+qd.fields = {
+    msg_len = ProtoField.uint32("qd.msg_len", "Length", base.DEC),
+    msg_type = ProtoField.uint8("qd.msg_type", "Type", base.DEC,
+                                utils.enum_tbl_to_str_tbl(qd.type))
+}
 
 -- Type of QD message.
 local qd_message_type = {
@@ -89,7 +119,7 @@ end
 local function read_msg_type(buf, off)
     qd_message_type = {}
     qd_message_type.val_uint = buf(off, 1):uint()
-    qd_message_type.val_str = utils.enum_val_to_str(fields.message_type,
+    qd_message_type.val_str = utils.enum_val_to_str(qd.type,
                                                     qd_message_type.val_uint)
     return qd_message_type
 end
@@ -160,8 +190,8 @@ function qd.dissect(proto, tvb_buf, off, packet_info, tree)
         -- Fill tree.
         local subtree = tree:add(proto, tvb_buf(off, full_msg_len),
                                  "HEARTBEAT_ZERO_LENGTH")
-        subtree:add(fields.qd.msg_len, tvb_buf(len_off, len_sizeof), len)
-        subtree:add(fields.qd.msg_type, fields.message_type.HEARTBEAT)
+        subtree:add(qd.fields.msg_len, tvb_buf(len_off, len_sizeof), len)
+        subtree:add(qd.fields.msg_type, qd.type.HEARTBEAT)
         dissection_result.subtree = subtree
         return dissection_result
     end
@@ -178,8 +208,8 @@ function qd.dissect(proto, tvb_buf, off, packet_info, tree)
 
     -- Fill tree.
     local subtree = tree:add(proto, tvb_buf(off, full_msg_len), type.val_str)
-    subtree:add(fields.qd.msg_len, tvb_buf(len_off, len_sizeof), len)
-    subtree:add(fields.qd.msg_type, tvb_buf(type_off, type_sizeof),
+    subtree:add(qd.fields.msg_len, tvb_buf(len_off, len_sizeof), len)
+    subtree:add(qd.fields.msg_type, tvb_buf(type_off, type_sizeof),
                 type.val_uint)
 
     -- Creating a QD message for subsequent dissectors.

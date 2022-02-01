@@ -1,12 +1,12 @@
 package.prepend_path(Dir.global_plugins_path())
 local settings = require("qd_proto.settings")
-local fields = require("qd_proto.fields")
+local utils = require("qd_proto.utils")
 local qd = require("qd_proto.dissectors.qd")
 
 -- Create protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
 -- Register fields for Wireshark.
-qd_proto.fields = fields.qd
+utils.append_to_table(qd_proto.fields, qd.fields)
 
 -- Called Wireshark when plugin loading.
 function qd_proto.init()
