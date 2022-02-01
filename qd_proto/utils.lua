@@ -188,8 +188,6 @@ function utils.is_empty_str(str) return str == nil or str == '' end
 -- Extract filename form path.
 -- @param path Path to file.
 -- @return Filename.
-function utils.get_filename(path)
-    return path:match("^.+/(.+)$")
-end
+function utils.get_filename(path) return path:match("([^\\]-)$") end
 
 return utils
