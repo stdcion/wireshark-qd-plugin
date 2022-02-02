@@ -6,8 +6,9 @@ Lua plugin for Wireshark for parsing QD protocol.
 
 Copy files (qd_proto.lua and qd_proto folder) to Wireshark *Lua Plugins* folder.
 Location *Lua Plugins* folder you can find out in Help->About Wireshark->Folders
-Its may be *"Global Lua Plugin"* or *"Personal Lua Plugin"* (the user's personal
-folder is preferred, because it does not require administrator rights).
+(on macOS Wireshark->About Wireshark->Folders) Its may be *"Global Lua Plugin"*
+or *"Personal Lua Plugin"* (the user's personal folder is preferred, because it
+does not require administrator rights).
 
 ![About Wireshark](doc/img/wireshark_about.png?raw=true)
 

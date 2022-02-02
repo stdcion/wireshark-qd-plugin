@@ -1,13 +1,13 @@
 -- @file utils.lua
--- @brief Provides general utility functions for dissector.
+-- @brief Provides general utility functions.
 local utils = {}
 
--- @brief Compact Format
+-- @brief Compact Format.
 -- The Compact Format is a serialization format for integer numbers.
 -- It uses encoding scheme with variable-length two's complement
 -- big-endian format capable to encode 64-bits signed numbers.
 -- The following table defines used serial format (the first byte is given
--- in bits with 'x' representing payload bit; the remaining bytes are
+-- in bits with 'x' representing payload bit the remaining bytes are
 -- given in bit count):
 -- 0xxxxxxx     - for -64 to 64
 -- 10xxxxxx  8x - for -8192 to 8192
@@ -19,9 +19,9 @@ local utils = {}
 -- 11111110 56x - for -36028797018963968 to 36028797018963968
 -- 11111111 64x - for -9223372036854775808 to 9223372036854775808
 
--- Get the number of bytes it takes compact format.
--- @param n First byte in compact format.
--- @return Number of bytes.
+-- Gets the length in bytes of an compact format.
+-- @param n The first byte in compact format.
+-- @return The number of bytes.
 function utils.get_compact_len(n)
     if n < 0x80 then
         return 1
@@ -47,17 +47,17 @@ end
 -- Reads an integer value from the data input in a compact format.
 -- @note If actual encoded value does not fit into an int (32-bit) data type,
 --       then it is truncated to int value (only lower 32 bits are returned)
--- @param buf Input buffer.
--- @param off Offset in input buffer.
--- @return value, size compact length in bytes - if read success;
---         nil, nil - if cannot read int value from buffer
+-- @param buf The input buffer.
+-- @param off The offset in input buffer.
+-- @return value, sizeof value - if reading is successful;
+--         nil,   nil          - if cannot read int value from buffer
 --         (buffer is not long enough).
 function utils.read_compact_int(buf, off)
-    if (off >= buf:len()) then return nil; end
+    if (off >= buf:len()) then return nil end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
     local remainder_len = buf:len() - off
-    if (compact_len > remainder_len) then return nil; end
+    if (compact_len > remainder_len) then return nil end
 
     off = off + 1
     if compact_len == 1 then
@@ -79,7 +79,8 @@ function utils.read_compact_int(buf, off)
         n = bit.lshift(n, 4)
         n = bit.arshift(n, 4)
     else
-        -- The encoded number is possibly out of range, some bytes have to be skipped.
+        -- The encoded number is possibly out of range,
+        -- some bytes have to be skipped.
         while bit.band(bit.lshift(n, 1), 0x10) ~= 0 do
             n = bit.lshift(n, 1)
             off = off + 1
@@ -90,23 +91,21 @@ function utils.read_compact_int(buf, off)
 end
 
 -- Reads an long value from the data input in a compact format.
--- @param buf Input buffer.
--- @param off Offset in input buffer.
--- @return value, size compact length in bytes - if read success;
---         nil, nil - if cannot read int value from buffer
+-- @param buf The input buffer.
+-- @param off The offset in input buffer.
+-- @return value, sizeof value - if reading is successful;
+--         nil,   nil          - if cannot read int value from buffer
 --         (buffer is not long enough).
 function utils.read_compact_long(buf, off)
-    if (off >= buf:len()) then return nil; end
+    if (off >= buf:len()) then return nil end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
     local remainder_len = buf:len() - off
-    if (compact_len > remainder_len) then return nil; end
+    if (compact_len > remainder_len) then return nil end
 
     if (compact_len <= 4) then
         -- Length and offset have been checked above.
-        n = Int64(utils.read_compact_int(buf, off), 0)
-        n = n:lshift(32)
-        n = n:arshift(32)
+        n = utils.int_to_long(n)
         return n, compact_len
     end
 
@@ -136,40 +135,60 @@ function utils.read_compact_long(buf, off)
         n = buf(off, 4):uint()
         off = off + 4
     end
-    n = Int64(n, 0)
-    n = n:lshift(32) + buf(off, 4):int()
+    n = Int64(buf(off, 4):uint(), n)
     return n, compact_len
 end
 
--- Convert Enum table to String table.
--- @param enum Enum table.
--- @return String table.
-function utils.enum_tbl_to_str_tbl(enum)
-    local string = {}
-    for name, num in pairs(enum) do string[num] = name end
-    return string
+-- Converts an int to a long.
+-- @param val The integer num (32-bit signed).
+-- @return The long num (64-bit signed).
+function utils.int_to_long(val)
+    val = Int64(val, 0)
+    val = val:lshift(32)
+    val = val:arshift(32)
+    return val
 end
 
--- Convert enum value to string.
--- @param enum Enum table.
--- @param val Value in enum table.
--- @return string - if convert success;
---         nil - if cannot convert.
-function utils.enum_val_to_str(enum, val)
-    return utils.enum_tbl_to_str_tbl(enum)[val]
+-- Converts an enumeration table to a string table.
+-- @param enum_table The enum table.
+-- @return The string table.
+function utils.enum_tbl_to_str_tbl(enum_table)
+    local string_table = {}
+    for name, num in pairs(enum_table) do string_table[num] = name end
+    return string_table
 end
 
--- Check string for empty.
--- @param str String.
--- @return true - if string is empty;
---         false - if string not empty.
+-- Converts an enumeration value to a string.
+-- @param enum_table The enum table.
+-- @param val  The value in the enum table.
+-- @return string - if the conversion was successful;
+--         nil -    if not.
+function utils.enum_val_to_str(enum_table, val)
+    return utils.enum_tbl_to_str_tbl(enum_table)[val]
+end
+
+-- Appends the source table to the destination table.
+-- @note The tables must have "numbered" keys.
+-- @param dst The destination table.
+-- @param src The source table.
+function utils.append_to_table(dst, src)
+    -- The first element has always index 1, not 0.
+    local n = #dst + 1
+    for _, field in pairs(src) do
+        dst[n] = field
+        n = n + 1
+    end
+end
+
+-- Checks if a string is empty.
+-- @param str The string.
+-- @return true  - if the string is empty;
+--         false - if the string not empty.
 function utils.is_empty_str(str) return str == nil or str == '' end
 
--- Extract filename form path.
--- @param path Path to file.
--- @return Filename.
-function utils.get_filename(path)
-    return path:match("^.+/(.+)$")
-end
+-- Extracts a filename from a path.
+-- @param path The path to the file.
+-- @return The filename.
+function utils.get_filename(path) return path:match("([^\\]-)$") end
 
 return utils
