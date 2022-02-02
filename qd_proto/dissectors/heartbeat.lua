@@ -1,5 +1,5 @@
 -- @file heartbeat.lua
--- @brief Provides dissector for HEARTBEAT message type.
+-- @brief The HEARTBEAT message dissector.
 package.prepend_path(Dir.global_plugins_path())
 local utils = require("qd_proto.utils")
 local dbg = require("qd_proto.dbg")
@@ -69,14 +69,14 @@ local function has_lag_mark(content_byte)
     return (bit.band(content_byte, content.LAG_MARK) ~= 0) and true or false
 end
 
--- Dissect HEARTBEAT message.
--- @param proto Protocol object.
--- @param tvb_buf Input buffer.
--- @param packet_info Packet information.
--- @param subtree Tree for display fields in Wireshark.
+-- Dissects the HEARTBEAT message.
+-- @param proto The protocol object.
+-- @param tvb_buf The input buffer.
+-- @param packet_info The packet information.
+-- @param subtree The tree for display fields in Wireshark.
 function heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
     local off = 0
-    -- Processing content byte.
+    -- Handles a byte of content.
     local content_range = tvb_buf(off, 1)
     local content_byte = content_range:uint()
     if (content_byte == nil) then
@@ -84,10 +84,10 @@ function heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
     end
 
     local fields = heartbeat.fields
-    -- Add content subtree.
+    -- Adds content subtree.
     local content_flags_tree = subtree:add(fields.content, content_range,
                                            content_byte)
-    -- Add content bit field to subtree.
+    -- Adds content bit field to subtree.
     content_flags_tree:add(fields.content_millis, content_range)
     content_flags_tree:add(fields.content_time_mark, content_range)
     content_flags_tree:add(fields.content_delta_mark, content_range)
@@ -95,7 +95,7 @@ function heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
 
     if (is_empty_content(content_byte)) then return end
 
-    -- Processing fields.
+    -- Handles the fields.
     off = off + 1
     if (has_time_millis(content_byte)) then
         local time_millis, sizeof = utils.read_compact_long(tvb_buf, off)
@@ -103,14 +103,14 @@ function heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
             dbg.error(dbg.file(), dbg.line(), "Can't read time_millis.")
             return
         end
-        -- Display in milliseconds 
+        -- Displays in milliseconds.
         subtree:add(fields.time_mills, tvb_buf(off, sizeof), time_millis)
 
-        -- Convert to second.
+        -- Gets the time in second.
         local seconds = (time_millis / 1000):tonumber()
-        -- Get the remainder in nanoseconds
+        -- Gets the remainder in nanoseconds
         local nanoseconds_remainder = (time_millis % 1000):tonumber() * 1000000
-        -- Display in UTC time.
+        -- Displays the time in UTC.
         subtree:add(fields.time_utc, tvb_buf(off, sizeof),
                     NSTime(seconds, nanoseconds_remainder))
 
