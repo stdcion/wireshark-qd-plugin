@@ -50,10 +50,9 @@ end
 -- @param packet_info The packet information.
 -- @param subtree The subtree for display fields in Wireshark.
 local function parse_message(proto, type, tvb_buf, packet_info, subtree)
-    if (type ~= nil and tvb_buf:len() ~= 0) then
-        if (type.val_uint == qd.type.HEARTBEAT) then
-            heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
-        end
+    if (type == nil or tvb_buf:len() == 0) then return end
+    if (type.val_uint == qd.type.HEARTBEAT) then
+        heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
     end
 end
 
