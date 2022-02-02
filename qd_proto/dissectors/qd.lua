@@ -1,5 +1,5 @@
 -- @file qd.lua
--- @brief Dissector QD message.
+-- @brief The QD message dissector.
 package.prepend_path(Dir.global_plugins_path())
 local utils = require("qd_proto.utils")
 local dbg = require("qd_proto.dbg")
@@ -30,7 +30,7 @@ qd.type = {
     RMI_ERROR = 55
 }
 
--- List fields of QD message.
+-- List of QD message fields.
 qd.fields = {
     msg_len = ProtoField.uint32("qd.msg_len", "Length", base.DEC),
     msg_type = ProtoField.uint8("qd.msg_type", "Type", base.DEC,
@@ -45,7 +45,7 @@ local qd_message_type = {
     val_str = nil
 }
 
--- QD message.
+-- The QD message.
 local qd_message = {
     -- Type of QD message.
     qd_message_type = nil,
@@ -53,7 +53,7 @@ local qd_message = {
     data = nil
 }
 
--- Result dissection message.
+-- The result dissection message.
 local dissection_result = {
     -- QD full message length (sizeof compact_len + size data fields).
     --  0  - this not QD message;
@@ -67,19 +67,19 @@ local dissection_result = {
     subtree = nil
 }
 
--- Check length input buffer.
--- @param buf Input buffer.
--- @param off Offset in input buffer.
--- @return true  - if buffer length and offset is correct;
+-- Checks the length of the input buffer.
+-- @param buf The input buffer.
+-- @param off The offset in input buffer.
+-- @return true  - if the buffer length and offset are correct;
 --         false - if not.
 local function check_input_buf_len(buf, off)
     return ((off < 0) or (off >= buf:len())) and false or true
 end
 
--- Check if input buffer was sliced/cut-off.
--- @param buf Input buffer.
--- @param off Offset in input buffer.
--- @return true  - if input buffer whole;
+-- Checks if the input buffer has been sliced/cut off.
+-- @param buf The input buffer.
+-- @param off The offset in input buffer.
+-- @return true  - if the input buffer is whole;
 --         false - if not.
 local function check_input_buf_cut_off(buf, off)
     if ((buf:len() - off) ~= buf:reported_length_remaining(off)) then
@@ -88,10 +88,10 @@ local function check_input_buf_cut_off(buf, off)
     return true
 end
 
--- Read compact length (sizeof message length) contained in buf.
--- @param buf Input buffer.
--- @param off Offset to compact length.
--- @return compact_len  - if compact length may fit in buffer;
+-- Reads compact length (sizeof message length) contained in buf.
+-- @param buf The input buffer.
+-- @param off The offset to compact length.
+-- @return compact_len  - if the compact length can fit in the buffer;
 --         nil          - if not.
 local function read_compact_len(buf, off)
     local n = buf(off, 1):uint()
@@ -101,10 +101,10 @@ local function read_compact_len(buf, off)
     return compact_len
 end
 
--- Read message length contained in buf.
--- @param buf Input buffer.
--- @param off Offset to message length.
--- @return msg_len  - if message length success read;
+-- Reads the message length contained in buf.
+-- @param buf The input buffer.
+-- @param off The offset to message length.
+-- @return msg_len  - if the length of the message is successfully read;
 --         nil      - if not.
 local function read_msg_len(buf, off)
     local msg_len = utils.read_compact_int(buf, off)
@@ -112,9 +112,9 @@ local function read_msg_len(buf, off)
     return msg_len
 end
 
--- Read message type contained in buf.
--- @param buf Input buffer.
--- @param off Offset to message type.
+-- Reads the message type contained in buf.
+-- @param buf The input buffer.
+-- @param off The offset to message length.
 -- @return qd_message_type.
 local function read_msg_type(buf, off)
     qd_message_type = {}
@@ -124,9 +124,9 @@ local function read_msg_type(buf, off)
     return qd_message_type
 end
 
--- Read full length of the received message.
--- @param buf Input buffer.
--- @param off Offset in input buffer.
+-- Reads the full length of the received message.
+-- @param buf The input buffer.
+-- @param off The offset to message length.
 -- @return qd_full_msg_len >  0, compact_len, msg_len,
 --         qd_full_msg_len <= 0, nil, nil.
 function qd.read_full_msg(buf, off)
@@ -166,16 +166,16 @@ function qd.read_full_msg(buf, off)
     return full_msg_len, compact_len, msg_len
 end
 
--- Dissect input message.
--- @param proto Protocol object.
--- @param tvb_buf Input buffer.
--- @param off Offset in input buffer
--- @param packet_info Packet information.
--- @param tree Tree for display fields in Wireshark.
+-- Dissects the input message.
+-- @param proto The protocol object.
+-- @param tvb_buf The input buffer.
+-- @param off The offset in input buffer
+-- @param packet_info The packet information.
+-- @param tree The tree for display fields in Wireshark.
 -- @return dissection_result.
 function qd.dissect(proto, tvb_buf, off, packet_info, tree)
     dissection_result = {}
-    -- Read full message length.
+    -- Reads full message length.
     local full_msg_len, compact_len, msg_len = qd.read_full_msg(tvb_buf, off)
     dissection_result.qd_full_msg_len = full_msg_len
     if (full_msg_len <= 0) then return dissection_result end
@@ -185,7 +185,7 @@ function qd.dissect(proto, tvb_buf, off, packet_info, tree)
     local len_sizeof = compact_len
     local len = msg_len
 
-    -- If message length zero, then this HEARTBEAT.
+    -- If the message length zero, then this HEARTBEAT.
     if (len == 0) then
         -- Fill tree.
         local subtree = tree:add(proto, tvb_buf(off, full_msg_len),
@@ -196,7 +196,7 @@ function qd.dissect(proto, tvb_buf, off, packet_info, tree)
         return dissection_result
     end
 
-    -- Get message type.
+    -- Gets the message type.
     local type_off = len_off + len_sizeof
     local type_sizeof = 1
     local type = read_msg_type(tvb_buf, type_off)
@@ -219,7 +219,7 @@ function qd.dissect(proto, tvb_buf, off, packet_info, tree)
     qd_message.type = type
     qd_message.data = tvb_buf(data_off, data_len)
 
-    -- Fill dissection result
+    -- Fill dissection result.
     dissection_result.qd_message = qd_message
     dissection_result.subtree = subtree
     return dissection_result
