@@ -44,15 +44,28 @@ function utils.get_compact_len(n)
     end
 end
 
+-- Result of buffer read functions.
+local read_result = {
+    -- Start position in buf (value position).
+    start_pos = nil,
+    -- Read value.
+    val = nil,
+    -- Sizeof val.
+    sizeof = nil,
+    -- Next position in buf, after val.
+    next_pos = nil
+}
+
 -- Reads an integer value from the data input in a compact format.
 -- @note If actual encoded value does not fit into an int (32-bit) data type,
 --       then it is truncated to int value (only lower 32 bits are returned)
 -- @param buf The input buffer.
 -- @param off The offset in input buffer.
--- @return value, sizeof value - if reading is successful;
---         nil,   nil          - if cannot read int value from buffer
---         (buffer is not long enough).
+-- @return read_result - if reading is successful;
+--         nil         - if cannot read int value from buffer
+--                       (buffer is not long enough).
 function utils.read_compact_int(buf, off)
+    local start_pos = off
     if (off >= buf:len()) then return nil end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
@@ -87,16 +100,24 @@ function utils.read_compact_int(buf, off)
         end
         n = buf(off, 4):int()
     end
-    return n, compact_len
+
+    read_result = {
+        start_pos = start_pos,
+        val = n,
+        sizeof = compact_len,
+        next_pos = start_pos + compact_len
+    }
+    return read_result
 end
 
 -- Reads an long value from the data input in a compact format.
 -- @param buf The input buffer.
 -- @param off The offset in input buffer.
--- @return value, sizeof value - if reading is successful;
---         nil,   nil          - if cannot read int value from buffer
---         (buffer is not long enough).
+-- @return read_result - if reading is successful;
+--         nil         - if cannot read int value from buffer
+--                       (buffer is not long enough).
 function utils.read_compact_long(buf, off)
+    local start_pos = off
     if (off >= buf:len()) then return nil end
     local n = buf(off, 1):uint()
     local compact_len = utils.get_compact_len(n)
@@ -105,9 +126,9 @@ function utils.read_compact_long(buf, off)
 
     if (compact_len <= 4) then
         -- Length and offset have been checked above.
-        n = utils.read_compact_int(buf, off)
-        n = utils.int_to_long(n)
-        return n, compact_len
+        read_result = utils.read_compact_int(buf, off)
+        read_result.val = utils.int_to_long(read_result.val)
+        return read_result
     end
 
     off = off + 1
@@ -137,7 +158,14 @@ function utils.read_compact_long(buf, off)
         off = off + 4
     end
     n = Int64(buf(off, 4):uint(), n)
-    return n, compact_len
+
+    read_result = {
+        start_pos = start_pos,
+        val = n,
+        sizeof = compact_len,
+        next_pos = start_pos + compact_len
+    }
+    return read_result
 end
 
 -- Converts an int to a long.

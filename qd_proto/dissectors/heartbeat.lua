@@ -98,53 +98,56 @@ function heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
     -- Handles the fields.
     off = off + 1
     if (has_time_millis(content_byte)) then
-        local time_millis, sizeof = utils.read_compact_long(tvb_buf, off)
+        local time_millis = utils.read_compact_long(tvb_buf, off)
         if (time_millis == nil) then
             dbg.error(dbg.file(), dbg.line(), "Can't read time_millis.")
             return
         end
+        local time_millis_range = tvb_buf(off, time_millis.sizeof)
         -- Displays in milliseconds.
-        subtree:add(fields.time_mills, tvb_buf(off, sizeof), time_millis)
+        subtree:add(fields.time_mills, time_millis_range, time_millis.val)
 
         -- Gets the time in second.
-        local seconds = (time_millis / 1000):tonumber()
+        local sec = (time_millis.val / 1000):tonumber()
         -- Gets the remainder in nanoseconds
-        local nanoseconds_remainder = (time_millis % 1000):tonumber() * 1000000
+        local nanosec_remainder = (time_millis.val % 1000):tonumber() * 1000000
         -- Displays the time in UTC.
-        subtree:add(fields.time_utc, tvb_buf(off, sizeof),
-                    NSTime(seconds, nanoseconds_remainder))
-
-        off = off + sizeof
+        local ns_time = NSTime(sec, nanosec_remainder)
+        subtree:add(fields.time_utc, time_millis_range, ns_time)
+        off = time_millis.next_pos
     end
     if (has_time_mark(content_byte)) then
-        local time_mark, sizeof = utils.read_compact_int(tvb_buf, off)
+        local time_mark = utils.read_compact_int(tvb_buf, off)
         if (time_mark == nil) then
             dbg.error(dbg.file(), dbg.line(), "Can't read time_mark.")
             return
         end
-        time_mark = utils.int_to_long(time_mark)
-        subtree:add(fields.time_mark, tvb_buf(off, sizeof), time_mark)
-        off = off + sizeof
+        local time_mark_range = tvb_buf(off, time_mark.sizeof)
+        time_mark.val = utils.int_to_long(time_mark.val)
+        subtree:add(fields.time_mark, time_mark_range, time_mark.val)
+        off = time_mark.next_pos
     end
     if (has_delta_mark(content_byte)) then
-        local delta_mark, sizeof = utils.read_compact_int(tvb_buf, off)
+        local delta_mark = utils.read_compact_int(tvb_buf, off)
         if (delta_mark == nil) then
             dbg.error(dbg.file(), dbg.line(), "Can't read delta_mark.")
             return
         end
-        delta_mark = utils.int_to_long(delta_mark)
-        subtree:add(fields.delta_mark, tvb_buf(off, sizeof), delta_mark)
-        off = off + sizeof
+        local delta_mark_range = tvb_buf(off, delta_mark.sizeof)
+        delta_mark.val = utils.int_to_long(delta_mark.val)
+        subtree:add(fields.delta_mark, delta_mark_range, delta_mark.val)
+        off = delta_mark.next_pos
     end
     if (has_lag_mark(content_byte)) then
-        local lag_mark, sizeof = utils.read_compact_int(tvb_buf, off)
+        local lag_mark = utils.read_compact_int(tvb_buf, off)
         if (lag_mark == nil) then
             dbg.error(dbg.file(), dbg.line(), "Can't read lag_mark.")
             return
         end
-        lag_mark = utils.int_to_long(lag_mark)
-        subtree:add(fields.lag_mark, tvb_buf(off, sizeof), lag_mark)
-        off = off + sizeof
+        local lag_mark_range = tvb_buf(off, lag_mark.sizeof)
+        lag_mark.val = utils.int_to_long(lag_mark.val)
+        subtree:add(fields.lag_mark, lag_mark_range, lag_mark.val)
+        off = lag_mark.next_pos
     end
 end
 

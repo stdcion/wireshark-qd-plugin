@@ -108,7 +108,7 @@ end
 --         nil      - if not.
 local function read_msg_len(buf, off)
     local msg_len = utils.read_compact_int(buf, off)
-    if (msg_len == nil or msg_len < 0) then return nil end
+    if (msg_len == nil or msg_len.val < 0) then return nil end
     return msg_len
 end
 
@@ -157,13 +157,13 @@ function qd.read_full_msg(buf, off)
     end
 
     local remainder_len = buf:len() - off
-    local full_msg_len = compact_len + msg_len
+    local full_msg_len = compact_len + msg_len.val
     if (full_msg_len > remainder_len) then
         dbg.info(dbg.file(), dbg.line(), "Need more data for build message.")
         return -(full_msg_len - remainder_len)
     end
 
-    return full_msg_len, compact_len, msg_len
+    return full_msg_len, compact_len, msg_len.val
 end
 
 -- Dissects the input message.
