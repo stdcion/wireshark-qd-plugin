@@ -105,6 +105,7 @@ function utils.read_compact_long(buf, off)
 
     if (compact_len <= 4) then
         -- Length and offset have been checked above.
+        n = utils.read_compact_int(buf, off)
         n = utils.int_to_long(n)
         return n, compact_len
     end
