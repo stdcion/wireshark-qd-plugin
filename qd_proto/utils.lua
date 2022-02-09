@@ -168,6 +168,35 @@ function utils.read_compact_long(buf, off)
     return read_result
 end
 
+-- Reads a UTF-8 string from the data input.
+-- @note The string in the buffer is stored in the following form:
+--       [string_len(compact_int)] + [string].
+--       The return value specifies start_pos, sizeof, and next_pos,
+--       including the string_len field.
+-- @param buf The input buffer.
+-- @param off The offset in input buffer.
+-- @return read_result - if reading is successful;
+--         nil         - if cannot read value from buffer.
+function utils.read_utf8_string(buf, off)
+    local start_pos = off
+    local string_len = utils.read_compact_int(buf, off)
+    if (string_len == nil or string_len.val < 0) then return nil end
+    off = string_len.next_pos
+    local string = ""
+    if string_len.val ~= 0 then
+        string = buf(off, string_len.val):raw();
+        if (string == nil) then return nil end
+    end
+
+    read_result = {
+        start_pos = start_pos,
+        val = string,
+        sizeof = string_len.sizeof + string_len.val,
+        next_pos = off + string_len.val
+    }
+    return read_result
+end
+
 -- Converts an int to a long.
 -- @param val The integer num (32-bit signed).
 -- @return The long num (64-bit signed).
