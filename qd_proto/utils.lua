@@ -62,7 +62,7 @@ local read_result = {
 -- @param buf The input buffer.
 -- @param off The offset in input buffer.
 -- @return read_result - if reading is successful;
---         nil         - if cannot read int value from buffer
+--         nil         - if cannot read value from buffer
 --                       (buffer is not long enough).
 function utils.read_compact_int(buf, off)
     local start_pos = off
@@ -114,7 +114,7 @@ end
 -- @param buf The input buffer.
 -- @param off The offset in input buffer.
 -- @return read_result - if reading is successful;
---         nil         - if cannot read int value from buffer
+--         nil         - if cannot read value from buffer
 --                       (buffer is not long enough).
 function utils.read_compact_long(buf, off)
     local start_pos = off
