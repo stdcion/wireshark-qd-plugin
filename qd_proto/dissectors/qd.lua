@@ -30,8 +30,8 @@ qd.type = {
     RMI_ERROR = 55
 }
 
--- List of QD message fields.
-qd.fields = {
+-- List of QD fields to display in Wireshark.
+qd.ws_fields = {
     msg_len = ProtoField.uint32("qd.msg_len", "Length", base.DEC),
     msg_type = ProtoField.uint8("qd.msg_type", "Type", base.DEC,
                                 utils.enum_tbl_to_str_tbl(qd.type))
@@ -108,7 +108,7 @@ end
 --         nil      - if not.
 local function read_msg_len(buf, off)
     local msg_len = utils.read_compact_int(buf, off)
-    if (msg_len == nil or msg_len < 0) then return nil end
+    if (msg_len == nil or msg_len.val < 0) then return nil end
     return msg_len
 end
 
@@ -157,13 +157,13 @@ function qd.read_full_msg(buf, off)
     end
 
     local remainder_len = buf:len() - off
-    local full_msg_len = compact_len + msg_len
+    local full_msg_len = compact_len + msg_len.val
     if (full_msg_len > remainder_len) then
         dbg.info(dbg.file(), dbg.line(), "Need more data for build message.")
         return -(full_msg_len - remainder_len)
     end
 
-    return full_msg_len, compact_len, msg_len
+    return full_msg_len, compact_len, msg_len.val
 end
 
 -- Dissects the input message.
@@ -190,8 +190,8 @@ function qd.dissect(proto, tvb_buf, off, packet_info, tree)
         -- Fill tree.
         local subtree = tree:add(proto, tvb_buf(off, full_msg_len),
                                  "HEARTBEAT_ZERO_LENGTH")
-        subtree:add(qd.fields.msg_len, tvb_buf(len_off, len_sizeof), len)
-        subtree:add(qd.fields.msg_type, qd.type.HEARTBEAT)
+        subtree:add(qd.ws_fields.msg_len, tvb_buf(len_off, len_sizeof), len)
+        subtree:add(qd.ws_fields.msg_type, qd.type.HEARTBEAT)
         dissection_result.subtree = subtree
         return dissection_result
     end
@@ -208,8 +208,8 @@ function qd.dissect(proto, tvb_buf, off, packet_info, tree)
 
     -- Fill tree.
     local subtree = tree:add(proto, tvb_buf(off, full_msg_len), type.val_str)
-    subtree:add(qd.fields.msg_len, tvb_buf(len_off, len_sizeof), len)
-    subtree:add(qd.fields.msg_type, tvb_buf(type_off, type_sizeof),
+    subtree:add(qd.ws_fields.msg_len, tvb_buf(len_off, len_sizeof), len)
+    subtree:add(qd.ws_fields.msg_type, tvb_buf(type_off, type_sizeof),
                 type.val_uint)
 
     -- Creating a QD message for subsequent dissectors.

@@ -5,12 +5,14 @@ local settings = require("qd_proto.settings")
 local utils = require("qd_proto.utils")
 local qd = require("qd_proto.dissectors.qd")
 local heartbeat = require("qd_proto.dissectors.heartbeat")
+local describe_records = require("qd_proto.dissectors.describe_records")
 
 -- Creates the protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
 -- Registers the fields for Wireshark.
-utils.append_to_table(qd_proto.fields, qd.fields)
-utils.append_to_table(qd_proto.fields, heartbeat.fields)
+utils.append_to_table(qd_proto.fields, qd.ws_fields)
+utils.append_to_table(qd_proto.fields, heartbeat.ws_fields)
+utils.append_to_table(qd_proto.fields, describe_records.ws_fields)
 
 -- Called Wireshark when plugin loading.
 function qd_proto.init()
@@ -53,6 +55,8 @@ local function parse_message(proto, type, tvb_buf, packet_info, subtree)
     if (type == nil or tvb_buf:len() == 0) then return end
     if (type.val_uint == qd.type.HEARTBEAT) then
         heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
+    elseif (type.val_uint == qd.type.DESCRIBE_RECORDS) then
+        describe_records.dissect(proto, tvb_buf, packet_info, subtree)
     end
 end
 
