@@ -9,8 +9,8 @@ local heartbeat = require("qd_proto.dissectors.heartbeat")
 -- Creates the protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
 -- Registers the fields for Wireshark.
-utils.append_to_table(qd_proto.fields, qd.fields)
-utils.append_to_table(qd_proto.fields, heartbeat.fields)
+utils.append_to_table(qd_proto.fields, qd.ws_fields)
+utils.append_to_table(qd_proto.fields, heartbeat.ws_fields)
 
 -- Called Wireshark when plugin loading.
 function qd_proto.init()
