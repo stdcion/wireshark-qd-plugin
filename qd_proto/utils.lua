@@ -258,6 +258,25 @@ function utils.compare_tbl(a, b)
     return true
 end
 
+-- Converts UTF-8 codepoint to UTF-8 char.
+-- @param codepoint The codepoint.
+-- @return The character (1-4 bytes) in utf-8 encoding.
+function utils.codepoint_to_char(codepoint)
+    local byte_tbl = {}
+    utils.set_tbl(byte_tbl, 0, 0, 4)
+    local i = 1
+    codepoint = bit.band(codepoint, 0xFFFFFFFF)
+    while codepoint ~= 0 do
+        local byte = bit.band(bit.rshift(codepoint, 24), 0xFF)
+        if (byte ~= 0) then
+            byte_tbl[i] = byte
+            i = i + 1
+        end
+        codepoint = bit.lshift(codepoint, 8)
+    end
+    return string.char(byte_tbl[1], byte_tbl[2], byte_tbl[3], byte_tbl[4])
+end
+
 -- Checks if a string is empty.
 -- @param str The string.
 -- @return true  - if the string is empty;
