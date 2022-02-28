@@ -238,6 +238,26 @@ function utils.append_to_table(dst, src)
     end
 end
 
+-- Sets the first num elements of the table to the specified value.
+-- @param tbl The table for set.
+-- @param off The offset in the table.
+-- @param val The specific value.
+-- @param num The number of elements.
+function utils.set_tbl(tbl, off, val, num)
+    for i = off, num, 1 do tbl[i] = val end
+end
+
+-- Compares two tables.
+-- @param a The first table.
+-- @param b The second table.
+-- @return true  - if the tables are the same;
+--         false - if nor.
+function utils.compare_tbl(a, b)
+    if #a ~= #b then return false end
+    for k, _ in pairs(a) do if a[k] ~= b[k] then return false end end
+    return true
+end
+
 -- Checks if a string is empty.
 -- @param str The string.
 -- @return true  - if the string is empty;
