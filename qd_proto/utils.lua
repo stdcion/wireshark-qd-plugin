@@ -20,6 +20,7 @@ local utils = {}
 -- 11111111 64x - for -9223372036854775808 to 9223372036854775808
 
 -- Gets the length in bytes of an compact format.
+-- @deprecated Use a compact_reader.lua
 -- @param n The first byte in compact format.
 -- @return The number of bytes.
 function utils.get_compact_len(n)
@@ -57,6 +58,7 @@ local read_result = {
 }
 
 -- Reads an integer value from the data input in a compact format.
+-- @deprecated Use a compact_reader.lua
 -- @note If actual encoded value does not fit into an int (32-bit) data type,
 --       then it is truncated to int value (only lower 32 bits are returned)
 -- @param buf The input buffer.
@@ -111,6 +113,7 @@ function utils.read_compact_int(buf, off)
 end
 
 -- Reads an long value from the data input in a compact format.
+-- @deprecated Use a compact_reader.lua
 -- @param buf The input buffer.
 -- @param off The offset in input buffer.
 -- @return read_result - if reading is successful;
