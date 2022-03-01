@@ -251,7 +251,7 @@ end
 -- @param a The first table.
 -- @param b The second table.
 -- @return true  - if the tables are the same;
---         false - if nor.
+--         false - if not.
 function utils.compare_tbl(a, b)
     if #a ~= #b then return false end
     for k, _ in pairs(a) do if a[k] ~= b[k] then return false end end
@@ -263,10 +263,10 @@ end
 -- @return The character (1-4 bytes) in utf-8 encoding.
 function utils.codepoint_to_char(codepoint)
     local byte_tbl = {}
-    utils.set_tbl(byte_tbl, 0, 0, 4)
+    utils.set_tbl(byte_tbl, 0, 0, 1)
     local i = 1
     codepoint = bit.band(codepoint, 0xFFFFFFFF)
-    while codepoint ~= 0 do
+    while codepoint ~= 0 and i <= 4 do
         local byte = bit.band(bit.rshift(codepoint, 24), 0xFF)
         if (byte ~= 0) then
             byte_tbl[i] = byte
@@ -274,7 +274,19 @@ function utils.codepoint_to_char(codepoint)
         end
         codepoint = bit.lshift(codepoint, 8)
     end
-    return string.char(byte_tbl[1], byte_tbl[2], byte_tbl[3], byte_tbl[4])
+
+    -- Function string.char() cannot contain trailing zeros 
+    -- and you can't pass a table as an argument.
+    if (#byte_tbl == 1) then
+        return string.char(byte_tbl[1])
+    elseif (#byte_tbl == 2) then
+        return string.char(byte_tbl[1], byte_tbl[2])
+    elseif (#byte_tbl == 3) then
+        return string.char(byte_tbl[1], byte_tbl[2], byte_tbl[3])
+    else
+        -- Maximum codepoint size.
+        return string.char(byte_tbl[1], byte_tbl[2], byte_tbl[3], byte_tbl[4])
+    end
 end
 
 -- Checks if a string is empty.
