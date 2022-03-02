@@ -14,6 +14,10 @@ function StreamReader:new(buf, off)
     private.buf = buf
     -- Current offset in input buffer.
     private.off = off
+    -- Compact reader functions.
+    private.compact_reader = require("qd_proto.io.compact_reader")
+    -- String reader functions.
+    private.string_reader = require("qd_proto.io.string_reader")
 
     -- #endregion
 
@@ -152,6 +156,56 @@ function StreamReader:new(buf, off)
         local low = res(4, 4)
         return UInt64(low:uint(), high:uint()), range
     end
+
+    -- #region Wrappers for easy of use.
+
+    -- Reads an int value from a compact format.
+    -- @throws BufferOutOfRange.
+    -- @return value - the read value,
+    --         range - represents the range of the buf
+    --                 where the value is stored.
+    function public:read_compact_int()
+        local res, range = private.compact_reader.read_compact_int(self)
+        return res, range
+    end
+
+    -- Reads an long value from a compact format.
+    -- @throws BufferOutOfRange.
+    -- @return value - the read value,
+    --         range - represents the range of the buf
+    --                 where the value is stored.
+    function public:read_compact_long()
+        local res, range = private.compact_reader.read_compact_long(self)
+        return res, range
+    end
+
+    -- Reads a UTF-8 string.
+    -- @note The string in the buffer is stored in the following form:
+    --       [string_len(compact_int)] + [string].
+    --       The return range including the string_len field.
+    -- @throws BufferOutOfRange.
+    -- @return value - the read value,
+    --         range - represents the range of the buf
+    --                 where the value is stored.
+    function public:read_utf8_str()
+        local res, range = private.string_reader.read_utf8_str(self)
+        return res, range
+    end
+
+    -- Reads an CESU-8 string.
+    -- @note The string in the buffer is stored in the following form:
+    --       [string_len(compact_int)] + [string].
+    --       The return range including the string_len field.
+    -- @throws BufferOutOfRange.
+    -- @return value - the read value,
+    --         range - represents the range of the buf
+    --                 where the value is stored.
+    function public:read_cesu_str()
+        local res, range = private.string_reader.read_cesu_str(self)
+        return res, range
+    end
+
+    -- #endregion
 
     -- #endregion
 
