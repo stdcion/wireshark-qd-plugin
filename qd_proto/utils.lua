@@ -172,6 +172,7 @@ function utils.read_compact_long(buf, off)
 end
 
 -- Reads a UTF-8 string from the data input.
+-- @deprecated Use a string_reader.lua
 -- @note The string in the buffer is stored in the following form:
 --       [string_len(compact_int)] + [string].
 --       The return value specifies start_pos, sizeof, and next_pos,
