@@ -1,17 +1,26 @@
+-- @file symbol_reader.lua
+-- @brief Reads "symbol" data form the buffer.
 package.prepend_path(Dir.global_plugins_path())
 local penta_codec = require("qd_proto.penta_codec"):new()
 
 local SymbolReader = {}
 
+-- Creates a new instance of the SymbolReader class.
 function SymbolReader:new()
     -- #region Private
 
     local private = {}
+
     private.MRU_EVENT_FLAGS = 1
+    -- Most Recently Used flags.
     private.mru_event_flags = private.MRU_EVENT_FLAGS
+    -- Current symbol.
     private.symbol = nil
+    -- Current symbol range.
     private.symbol_range = nil
+    -- Current events flags.
     private.event_flags = nil
+    -- Current events flags range.
     private.event_flags_range = nil
 
     -- #endregion
@@ -20,6 +29,7 @@ function SymbolReader:new()
 
     local public = {}
 
+    -- Clears current symbol and event flags.  
     function public:reset()
         private.mru_event_flags = private.MRU_EVENT_FLAGS
         private.symbol = nil
@@ -28,14 +38,14 @@ function SymbolReader:new()
         private.event_flags_range = nil
     end
 
-    function public:get_current_symbol()
-        return private.symbol, private.symbol_range
-    end
-
-    function public:get_current_events_flags()
-        return private.event_flags, private.event_flags_range
-    end
-
+    -- Reads symbol from stream.
+    -- @param stream Represents the input buffer.
+    -- @return symbol - the symbol,
+    --         symbol_range - represents the range of the buf
+    --                 where the symbol is stored.
+    --         event - the event flags (may be nil),
+    --         event_range - represents (may be nil), the range of the buf
+    --                 where the event flags is stored.
     function public:read_symbol(stream)
         private.event_flags = nil
         private.event_flags_range = nil
