@@ -304,4 +304,16 @@ function utils.is_empty_str(str) return str == nil or str == '' end
 -- @return The filename.
 function utils.get_filename(path) return path:match("([^\\]-)$") end
 
+-- Converts time in milliseconds to NSTime (with seconds and nanoseconds).
+-- @param millis The UTC time in millisecond.
+-- @return The NSTime object (with seconds and nanoseconds).
+function utils.millis_to_nstime(millis)
+    -- Gets the time in second.
+    local seconds = (millis / 1000):tonumber()
+    -- Gets the remainder in nanoseconds
+    local nanoseconds_remainder = (millis % 1000):tonumber() * 1000000
+    -- Returns NSTime object.
+    return NSTime(seconds, nanoseconds_remainder)
+end
+
 return utils
