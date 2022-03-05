@@ -20,6 +20,7 @@ local utils = {}
 -- 11111111 64x - for -9223372036854775808 to 9223372036854775808
 
 -- Gets the length in bytes of an compact format.
+-- @deprecated Use a compact_reader.lua
 -- @param n The first byte in compact format.
 -- @return The number of bytes.
 function utils.get_compact_len(n)
@@ -57,6 +58,7 @@ local read_result = {
 }
 
 -- Reads an integer value from the data input in a compact format.
+-- @deprecated Use a compact_reader.lua
 -- @note If actual encoded value does not fit into an int (32-bit) data type,
 --       then it is truncated to int value (only lower 32 bits are returned)
 -- @param buf The input buffer.
@@ -111,6 +113,7 @@ function utils.read_compact_int(buf, off)
 end
 
 -- Reads an long value from the data input in a compact format.
+-- @deprecated Use a compact_reader.lua
 -- @param buf The input buffer.
 -- @param off The offset in input buffer.
 -- @return read_result - if reading is successful;
@@ -169,6 +172,7 @@ function utils.read_compact_long(buf, off)
 end
 
 -- Reads a UTF-8 string from the data input.
+-- @deprecated Use a string_reader.lua
 -- @note The string in the buffer is stored in the following form:
 --       [string_len(compact_int)] + [string].
 --       The return value specifies start_pos, sizeof, and next_pos,
@@ -238,6 +242,57 @@ function utils.append_to_table(dst, src)
     end
 end
 
+-- Sets the first num elements of the table to the specified value.
+-- @param tbl The table for set.
+-- @param off The offset in the table.
+-- @param val The specific value.
+-- @param num The number of elements.
+function utils.set_tbl(tbl, off, val, num)
+    for i = off, num, 1 do tbl[i] = val end
+end
+
+-- Compares two tables.
+-- @param a The first table.
+-- @param b The second table.
+-- @return true  - if the tables are the same;
+--         false - if not.
+function utils.compare_tbl(a, b)
+    if #a ~= #b then return false end
+    for k, _ in pairs(a) do if a[k] ~= b[k] then return false end end
+    return true
+end
+
+-- Converts UTF-8 codepoint to UTF-8 char.
+-- @param codepoint The codepoint.
+-- @return The character (1-4 bytes) in utf-8 encoding.
+function utils.codepoint_to_char(codepoint)
+    local byte_tbl = {}
+    utils.set_tbl(byte_tbl, 0, 0, 1)
+    local i = 1
+    codepoint = bit.band(codepoint, 0xFFFFFFFF)
+    while codepoint ~= 0 and i <= 4 do
+        local byte = bit.band(bit.rshift(codepoint, 24), 0xFF)
+        if (byte ~= 0) then
+            byte_tbl[i] = byte
+            i = i + 1
+        end
+        codepoint = bit.lshift(codepoint, 8)
+    end
+
+    -- Function string.char() cannot contain trailing zeros 
+    -- and you can't pass a table as an argument.
+    if (#byte_tbl == 1) then
+        return string.char(byte_tbl[1])
+    elseif (#byte_tbl == 2) then
+        return string.char(byte_tbl[1], byte_tbl[2])
+    elseif (#byte_tbl == 3) then
+        return string.char(byte_tbl[1], byte_tbl[2], byte_tbl[3])
+    else
+        -- Maximum codepoint size.
+        return string.char(byte_tbl[1], byte_tbl[2], byte_tbl[3], byte_tbl[4])
+    end
+end
+
 -- Checks if a string is empty.
 -- @param str The string.
 -- @return true  - if the string is empty;
@@ -248,5 +303,17 @@ function utils.is_empty_str(str) return str == nil or str == '' end
 -- @param path The path to the file.
 -- @return The filename.
 function utils.get_filename(path) return path:match("([^\\]-)$") end
+
+-- Converts time in milliseconds to NSTime (with seconds and nanoseconds).
+-- @param millis The UTC time in millisecond.
+-- @return The NSTime object (with seconds and nanoseconds).
+function utils.millis_to_nstime(millis)
+    -- Gets the time in second.
+    local seconds = (millis / 1000):tonumber()
+    -- Gets the remainder in nanoseconds
+    local nanoseconds_remainder = (millis % 1000):tonumber() * 1000000
+    -- Returns NSTime object.
+    return NSTime(seconds, nanoseconds_remainder)
+end
 
 return utils

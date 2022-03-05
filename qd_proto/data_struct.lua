@@ -2,6 +2,30 @@
 -- @brief Types and structures.
 local data_struct = {}
 
+-- List of QD message type.
+data_struct.qd_type = {
+    HEARTBEAT = 0,
+    DESCRIBE_PROTOCOL = 1,
+    DESCRIBE_RECORDS = 2,
+    PART = 4,
+    RAW_DATA = 5,
+    TICKER_DATA = 10,
+    TICKER_ADD_SUBSCRIPTION = 11,
+    TICKER_REMOVE_SUBSCRIPTION = 12,
+    STREAM_DATA = 15,
+    STREAM_ADD_SUBSCRIPTION = 16,
+    STREAM_REMOVE_SUBSCRIPTION = 17,
+    HISTORY_DATA = 20,
+    HISTORY_ADD_SUBSCRIPTION = 21,
+    HISTORY_REMOVE_SUBSCRIPTION = 22,
+    RMI_DESCRIBE_SUBJECT = 50,
+    RMI_DESCRIBE_OPERATION = 51,
+    RMI_REQUEST = 52,
+    RMI_CANCEL = 53,
+    RMI_RESULT = 54,
+    RMI_ERROR = 55
+}
+
 -- Base field type.
 data_struct.field_base = {
     VOID = 0,

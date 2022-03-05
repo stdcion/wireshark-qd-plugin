@@ -4,8 +4,10 @@ package.prepend_path(Dir.global_plugins_path())
 local settings = require("qd_proto.settings")
 local utils = require("qd_proto.utils")
 local qd = require("qd_proto.dissectors.qd")
+local data_struct = require("qd_proto.data_struct")
 local heartbeat = require("qd_proto.dissectors.heartbeat")
 local describe_records = require("qd_proto.dissectors.describe_records")
+local add_subscription = require("qd_proto.dissectors.add_subscription")
 
 -- Creates the protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
@@ -13,6 +15,7 @@ local qd_proto = Proto("QD", "Quote Distribution protocol")
 utils.append_to_table(qd_proto.fields, qd.ws_fields)
 utils.append_to_table(qd_proto.fields, heartbeat.ws_fields)
 utils.append_to_table(qd_proto.fields, describe_records.ws_fields)
+utils.append_to_table(qd_proto.fields, add_subscription.ws_fields)
 
 -- Called Wireshark when plugin loading.
 function qd_proto.init()
@@ -53,10 +56,15 @@ end
 -- @param subtree The subtree for display fields in Wireshark.
 local function parse_message(proto, type, tvb_buf, packet_info, subtree)
     if (type == nil or tvb_buf:len() == 0) then return end
-    if (type.val_uint == qd.type.HEARTBEAT) then
+    type = type.val_uint
+    if (type == data_struct.qd_type.HEARTBEAT) then
         heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
-    elseif (type.val_uint == qd.type.DESCRIBE_RECORDS) then
+    elseif (type == data_struct.qd_type.DESCRIBE_RECORDS) then
         describe_records.dissect(proto, tvb_buf, packet_info, subtree)
+    elseif (type == data_struct.qd_type.TICKER_ADD_SUBSCRIPTION or
+            type == data_struct.qd_type.HISTORY_ADD_SUBSCRIPTION or
+            type == data_struct.qd_type.STREAM_ADD_SUBSCRIPTION) then
+        add_subscription.dissect(type, proto, tvb_buf, packet_info, subtree)
     end
 end
 
