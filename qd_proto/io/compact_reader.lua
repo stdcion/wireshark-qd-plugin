@@ -73,8 +73,8 @@ function compact_reader.read_compact_int(stream)
         n = bit.arshift(n, 11)
     elseif compact_len == 4 then
         n = bit.lshift(n, 24)
-        n = n + bit.lshift(stream:read_uint16(), 16)
-        n = n + stream:read_uint8()
+        n = n + bit.lshift(stream:read_uint8(), 16)
+        n = n + stream:read_uint16()
         n = bit.lshift(n, 4)
         n = bit.arshift(n, 4)
     else
