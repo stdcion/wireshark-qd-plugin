@@ -201,6 +201,21 @@ function StreamReader:new(buf, off)
         return private.string_reader.read_utf8_char(self)
     end
 
+    -- Reads an UTF-8 sequence from the input stream.
+    -- @note The string in the buffer is stored in the following form:
+    --       [string_len(compact_long)] + [string].
+    --       string_len can contain the length in characters or bytes.
+    --       The return range including the string_len field.
+    -- @throws BufferOutOfRange.
+    -- @param stream Represents the input buffer.
+    -- @param isLenInChar The flag determines what the length is measured in.
+    -- @return value - the read value,
+    --         range - represents the range of the buf
+    --                 where the value is stored.
+    function public:read_utf8_sequence(isLenInChar)
+        return private.string_reader.read_utf8_sequence(self, isLenInChar)
+    end
+
     -- Reads an UTF-8 string from the input stream.
     -- @note The string in the buffer is stored in the following form:
     --       [string_len(compact_long)] + [string].
