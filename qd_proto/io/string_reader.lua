@@ -1,60 +1,107 @@
 -- @file string_reader.lua
 -- @brief Reads string form the buffer.
+-- Strings are encoded in CESU-8 format.
+-- The Compatibility Encoding Scheme for UTF-16: 8-Bit (CESU-8)
+-- is a variant of UTF-8 that is described in Unicode Technical Report #26.
+-- A CESU-8 code point from the Basic Multilingual Plane (BMP),
+-- i.e. a code point in the range U+0000 to U+FFFF, is encoded
+-- in the same way as in UTF-8. A Unicode supplementary character,
+-- i.e. a code point in the range U+10000 to U+10FFFF,
+-- is first represented as a surrogate pair, like in UTF-16,
+-- and then each surrogate code point is encoded in UTF-8.
 package.prepend_path(Dir.global_plugins_path())
-local compact_reader = require("qd_proto.io.compact_reader")
 local utils = require("qd_proto.utils")
+local compact_reader = require("qd_proto.io.compact_reader")
 
 local string_reader = {}
 
--- Reads 2-bytes Unicode code point.
+-- Reads 2-bytes UTF-8 code point.
 -- @throws BufferOutOfRange.
 -- @param stream Represents the input buffer.
--- @param first The first byte code point.
--- @return The Unicode code point.
+-- @param first The first byte of code point.
+-- @return The UTF-8 code point.
 local function read_utf2(stream, first)
-    local second = stream:read_int8()
-    local codepoint = bit.lshift(bit.band(first, 0x1F), 6)
-    codepoint = bit.bor(codepoint, bit.band(second, 0x3F))
-    return codepoint
+    return bit.lshift(first, 8) + stream:read_bytes(1):uint()
 end
 
--- Reads 3-bytes Unicode code point.
--- @throws BufferOutOfRange.
--- @param stream Represents the input buffer.
--- @param first The first byte code point.
--- @return The Unicode code point.
-local function read_utf3(stream, first)
-    local tail = stream:read_int16()
-    local codepoint = bit.lshift(bit.band(first, 0x0F), 12)
-    codepoint = bit.bor(codepoint, bit.rshift(bit.band(tail, 0x3F00), 2))
-    codepoint = bit.bor(codepoint, bit.band(tail, 0x3F))
-    return codepoint
-end
-
--- Reads 4-bytes Unicode code point.
--- @throws BufferOutOfRange.
--- @param stream Represents the input buffer.
--- @param first The first byte code point.
--- @return The Unicode code point.
-local function read_utf4(stream, first)
-    local second = stream:read_int8()
-    local tail = stream:read_int16()
-    local codepoint = bit.lshift(bit.band(first, 0x07), 18)
-    codepoint = bit.bor(codepoint, bit.lshift(bit.band(second, 0x3F), 12))
-    codepoint = bit.bor(codepoint, bit.rshift(bit.band(tail, 0x3F00), 2))
-    codepoint = bit.bor(codepoint, bit.band(tail, 0x3F))
-    return codepoint
-end
-
--- Reads Unicode code point in a UTF-8 format.
+-- Reads 3-bytes (4-bytes if this CESU-8) UTF-8 code point.
 -- @note Overlong UTF-8 and CESU-8-encoded surrogates
 --       are accepted and read without errors.
 -- @throws BufferOutOfRange.
 -- @param stream Represents the input buffer.
--- @return The Unicode code point.
-local function read_utf_codepoint(stream)
-    local c = stream:read_int8()
-    if (c >= 0) then return c end
+-- @param first The first byte of code point.
+-- @return The UTF-8 code point.
+local function read_utf3(stream, first)
+    local input = {}
+    input[1] = stream:read_uint8()
+    input[2] = stream:read_uint8()
+
+    -- CESU-8 strings will encode surrogate pairs using the byte sequence:
+    -- ED [A0..BF] [80..BF] ED [B0..BF] [80..BF]
+    -- Such a sequence of bytes cannot appear in any valid UTF-8 string,
+    -- and are the only bytes allowed to appear in CESU-8 in excess of UTF-8.
+    if (first == 0xED and input[1] >= 0x0A and input[1] <= 0xBF) then
+        if (input[2] >= 0x80 and input[2] <= 0xBF) then
+            -- Skips insignificant 0xED.
+            stream:skip_bytes(1)
+
+            -- Reads second surrogate pairs.
+            input[3] = stream:read_uint8()
+            input[4] = stream:read_uint8()
+
+            -- Masks insignificant bits.
+            input[1] = (bit.band(input[1], 0x0F) + 1) -- (top 5-bits minus one)
+            input[2] = bit.band(input[2], 0x3F)
+            input[3] = bit.band(input[3], 0x0F)
+            input[4] = bit.band(input[4], 0x3F)
+
+            -- Converts CESU-8 surrogate pairs to UTF-8 (4-bytes).
+            -- ED       A0-AF    80-BF    ED       B0-BF    80-BF   (CESU-8)
+            -- 11101101 1010aaaa 10bbbbbb 11101101 1011cccc 10dddddd
+            -- F0-F4    80-BF    80-BF    80-BF    (UTF-8)
+            -- 11110oaa 10aabbbb 10bbcccc 10dddddd (o is "overflow" bit)
+            local utf8_arr = {}
+            utf8_arr[1] = bit.bor(0xF0, bit.rshift(input[1], 2))
+            utf8_arr[2] = bit.bor(0x80, bit.lshift(bit.band(input[1], 0x03), 4))
+            utf8_arr[2] = bit.bor(utf8_arr[2], bit.rshift(input[2], 2))
+            utf8_arr[3] = bit.bor(0x80, bit.lshift(bit.band(input[2], 0x03), 4))
+            utf8_arr[3] = bit.bor(utf8_arr[3], input[3])
+            utf8_arr[4] = bit.bor(0x80, input[4])
+
+            -- Converts UTF-8 array to codepoint.
+            local codepoint = 0
+            for i = 1, 4, 1 do
+                codepoint = bit.bor(codepoint,
+                                    bit.lshift(utf8_arr[i], 32 - (i * 8)))
+            end
+
+            -- Returns UTF-8 codepoint (4-bytes).
+            return codepoint
+        end
+    end
+
+    -- Returns UTF-8 codepoint (3-bytes).
+    return bit.lshift(first, 16) + bit.lshift(input[1], 8) + input[2]
+end
+
+-- Reads 4-bytes UTF-8 code point.
+-- @throws BufferOutOfRange.
+-- @param stream Represents the input buffer.
+-- @param first The first byte of code point.
+-- @return The UTF-8 code point.
+local function read_utf4(stream, first)
+    return bit.lshift(first, 24) + stream:read_bytes(3):uint()
+end
+
+-- Reads UTF-8 code point from the input stream.
+-- @note Overlong UTF-8 and CESU-8-encoded surrogates
+--       are accepted and read without errors.
+-- @throws BufferOutOfRange.
+-- @param stream Represents the input buffer.
+-- @return The UTF-8 code point.
+local function read_utf8_codepoint(stream)
+    local c = stream:read_uint8()
+    if (c <= 0x7F) then return c end
     if (bit.band(c, 0xE0) == 0xC0) then return read_utf2(stream, c) end
     if (bit.band(c, 0xF0) == 0xE0) then return read_utf3(stream, c) end
     if (bit.band(c, 0xF8) == 0xF0) then return read_utf4(stream, c) end
