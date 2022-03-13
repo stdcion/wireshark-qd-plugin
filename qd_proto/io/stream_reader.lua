@@ -14,9 +14,9 @@ function StreamReader:new(buf, off)
     private.buf = buf
     -- Current offset in input buffer.
     private.off = off
-    -- Compact reader functions.
+    -- Functions of the compact reader.
     private.compact_reader = require("qd_proto.io.compact_reader")
-    -- String reader functions.
+    -- Functions of the string reader.
     private.string_reader = require("qd_proto.io.string_reader")
 
     -- #endregion
@@ -165,8 +165,7 @@ function StreamReader:new(buf, off)
     --         range - represents the range of the buf
     --                 where the value is stored.
     function public:read_compact_int()
-        local res, range = private.compact_reader.read_compact_int(self)
-        return res, range
+        return private.compact_reader.read_compact_int(self)
     end
 
     -- Reads an long value from a compact format.
@@ -175,34 +174,69 @@ function StreamReader:new(buf, off)
     --         range - represents the range of the buf
     --                 where the value is stored.
     function public:read_compact_long()
-        local res, range = private.compact_reader.read_compact_long(self)
-        return res, range
+        return private.compact_reader.read_compact_long(self)
     end
 
-    -- Reads a UTF-8 string.
+    -- Reads a byte array from the input stream.
+    -- @note The byte array in the buffer is stored in the following form:
+    --       [arr_len(compact_long)] + [arr].
+    --       arr_len contain the length in bytes.
+    --       The return range including the arr_len field.
+    -- @throws BufferOutOfRange.
+    -- @param stream Represents the input buffer.
+    -- @return value - the read value,
+    --         range - represents the range of the buf
+    --                 where the value is stored.
+    function public:read_byte_array()
+        return private.compact_reader.read_byte_array(self)
+    end
+
+    -- Reads an UTF-8 char from the input stream.
+    -- @note Overlong UTF-8 and CESU-8-encoded surrogates
+    --       are accepted and read without errors.
+    -- @throws BufferOutOfRange.
+    -- @param stream Represents the input buffer.
+    -- @return The UTF-8 char (1-4 bytes).
+    function public:read_utf8_char()
+        return private.string_reader.read_utf8_char(self)
+    end
+
+    -- Reads an UTF-8 string from the input stream.
     -- @note The string in the buffer is stored in the following form:
-    --       [string_len(compact_int)] + [string].
+    --       [string_len(compact_long)] + [string].
+    --       string_len contain the length in bytes.
     --       The return range including the string_len field.
     -- @throws BufferOutOfRange.
+    -- @param stream Represents the input buffer.
     -- @return value - the read value,
     --         range - represents the range of the buf
     --                 where the value is stored.
     function public:read_utf8_str()
-        local res, range = private.string_reader.read_utf8_str(self)
-        return res, range
+        return private.string_reader.read_utf8_str(self)
     end
 
-    -- Reads an CESU-8 string.
+    -- Reads an UTF-8 characters array from the input stream.
     -- @note The string in the buffer is stored in the following form:
-    --       [string_len(compact_int)] + [string].
+    --       [string_len(compact_long)] + [string].
+    --       string_len contain the length in characters.
     --       The return range including the string_len field.
     -- @throws BufferOutOfRange.
+    -- @param stream Represents the input buffer.
     -- @return value - the read value,
     --         range - represents the range of the buf
     --                 where the value is stored.
-    function public:read_cesu_str()
-        local res, range = private.string_reader.read_cesu_str(self)
-        return res, range
+    function public:read_utf8_char_arr()
+        return private.string_reader.read_utf8_char_arr(self)
+    end
+
+    -- Reads short UTF-8 (up to 4-character) string representation as int field.
+    -- @throws BufferOutOfRange.
+    -- @param stream Represents the input buffer.
+    -- @return value - the read value,
+    --         range - represents the range of the buf
+    --                 where the value is stored.
+    function public:read_utf8_short_str()
+        return private.string_reader.read_utf8_short_str(self)
     end
 
     -- #endregion
