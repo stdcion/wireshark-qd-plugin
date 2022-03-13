@@ -122,47 +122,102 @@ function string_reader.read_utf8_char(stream)
     return char, range
 end
 
+-- Reads an UTF-8 sequence from the input stream.
 -- @note The string in the buffer is stored in the following form:
---       [string_len(compact_int)] + [string].
---       The return value specifies start_pos, sizeof, and next_pos,
---       including the string_len field.
+--       [string_len(compact_long)] + [string].
+--       string_len can contain the length in characters or bytes.
+--       The return range including the string_len field.
+-- @throws BufferOutOfRange.
+-- @param stream Represents the input buffer.
+-- @param isLenInChar The flag determines what the length is measured in.
+-- @return value - the read value,
+--         range - represents the range of the buf
+--                 where the value is stored.
+function string_reader.read_utf8_sequence(stream, isLenInChar)
+    local start_pos = stream:get_current_pos()
+    local range = nil
+    local str = ""
+    -- Length in bytes or characters.
+    local len = compact_reader.read_compact_long(stream)
+
+    if (isLenInChar) then
+        while (len > 0) do
+            local codepoint = read_utf8_codepoint(stream)
+            str = str .. utils.codepoint_to_char(codepoint)
+            len = len - 1
+        end
+    else
+        while (len > 0) do
+            local remembered_pos = stream:get_current_pos()
+            local codepoint = read_utf8_codepoint(stream)
+            str = str .. utils.codepoint_to_char(codepoint)
+            -- How many bytes have been read.
+            len = len - (stream:get_current_pos() - remembered_pos)
+        end
+    end
+
+    range = stream:get_range(start_pos, stream:get_current_pos())
+    return str, range
+end
+
+-- Reads an UTF-8 string from the input stream.
+-- @note The string in the buffer is stored in the following form:
+--       [string_len(compact_long)] + [string].
+--       string_len contain the length in bytes.
+--       The return range including the string_len field.
 -- @throws BufferOutOfRange.
 -- @param stream Represents the input buffer.
 -- @return value - the read value,
 --         range - represents the range of the buf
 --                 where the value is stored.
 function string_reader.read_utf8_str(stream)
-    local start_pos = stream:get_current_pos()
-    local range = nil
-    local str = ""
-    local str_len = compact_reader.read_compact_int(stream)
-    if str_len ~= 0 then str = stream:read_bytes(str_len):raw() end
-
-    range = stream:get_range(start_pos, stream:get_current_pos())
-    return str, range
+    return string_reader.read_utf8_sequence(stream, false)
 end
 
--- Reads a CESU-8 string from the data input.
+-- Reads an UTF-8 characters array from the input stream.
 -- @note The string in the buffer is stored in the following form:
---       [string_len(compact_int)] + [string].
---       The return value specifies start_pos, sizeof, and next_pos,
---       including the string_len field.
+--       [string_len(compact_long)] + [string].
+--       string_len contain the length in characters.
+--       The return range including the string_len field.
 -- @throws BufferOutOfRange.
 -- @param stream Represents the input buffer.
 -- @return value - the read value,
 --         range - represents the range of the buf
 --                 where the value is stored.
-function string_reader.read_cesu_str(stream)
+function string_reader.read_utf8_char_arr(stream)
+    return string_reader.read_utf8_sequence(stream, true)
+end
+
+-- Reads short UTF-8 (up to 4-character) string representation as int field.
+-- @throws BufferOutOfRange.
+-- @param stream Represents the input buffer.
+-- @return value - the read value,
+--         range - represents the range of the buf
+--                 where the value is stored.
+function string_reader.read_utf8_short_str(stream)
+    local codepoint, range = compact_reader.read_compact_int(stream)
+    return utils.codepoint_to_char(codepoint), range
+end
+
+-- Reads a byte array from the input stream.
+-- @note The byte array in the buffer is stored in the following form:
+--       [arr_len(compact_long)] + [arr].
+--       arr_len contain the length in bytes.
+--       The return range including the arr_len field.
+-- @throws BufferOutOfRange.
+-- @param stream Represents the input buffer.
+-- @return value - the read value,
+--         range - represents the range of the buf
+--                 where the value is stored.
+function string_reader.read_byte_array(stream)
     local start_pos = stream:get_current_pos()
     local range = nil
-    local str = ""
-    local str_len = compact_reader.read_compact_int(stream)
-    for i = 1, str_len, 1 do
-        str = str .. utils.codepoint_to_char(read_utf_codepoint(stream))
-    end
+    local arr = {}
+    local arr_len = compact_reader.read_compact_long(stream)
+    if arr_len > 0 then arr = stream:read_bytes(arr_len):raw() end
 
     range = stream:get_range(start_pos, stream:get_current_pos())
-    return str, range
+    return arr, range
 end
 
 return string_reader
