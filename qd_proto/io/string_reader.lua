@@ -199,25 +199,4 @@ function string_reader.read_utf8_short_str(stream)
     return utils.codepoint_to_char(codepoint), range
 end
 
--- Reads a byte array from the input stream.
--- @note The byte array in the buffer is stored in the following form:
---       [arr_len(compact_long)] + [arr].
---       arr_len contain the length in bytes.
---       The return range including the arr_len field.
--- @throws BufferOutOfRange.
--- @param stream Represents the input buffer.
--- @return value - the read value,
---         range - represents the range of the buf
---                 where the value is stored.
-function string_reader.read_byte_array(stream)
-    local start_pos = stream:get_current_pos()
-    local range = nil
-    local arr = {}
-    local arr_len = compact_reader.read_compact_long(stream)
-    if arr_len > 0 then arr = stream:read_bytes(arr_len):raw() end
-
-    range = stream:get_range(start_pos, stream:get_current_pos())
-    return arr, range
-end
-
 return string_reader
