@@ -107,7 +107,21 @@ local function read_utf8_codepoint(stream)
     if (bit.band(c, 0xF8) == 0xF0) then return read_utf4(stream, c) end
 end
 
--- Reads a UTF-8 string from the data input.
+-- Reads an UTF-8 char from the input stream.
+-- @note Overlong UTF-8 and CESU-8-encoded surrogates
+--       are accepted and read without errors.
+-- @throws BufferOutOfRange.
+-- @param stream Represents the input buffer.
+-- @return The UTF-8 char (1-4 bytes).
+function string_reader.read_utf8_char(stream)
+    local start_pos = stream:get_current_pos()
+    local range = nil
+    local char = utils.codepoint_to_char(read_utf8_codepoint(stream))
+
+    range = stream:get_range(start_pos, stream:get_current_pos())
+    return char, range
+end
+
 -- @note The string in the buffer is stored in the following form:
 --       [string_len(compact_int)] + [string].
 --       The return value specifies start_pos, sizeof, and next_pos,
