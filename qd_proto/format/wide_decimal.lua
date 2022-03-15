@@ -17,14 +17,14 @@ local const = {
 --       to a string using string.format(format, value).
 --       Format can specify precision, for example:
 --       string.format("%.10g", value) - exp form, ten decimal places.
--- @param wide The Wide Decimal number.
+-- @param val The Wide Decimal number.
 -- @return The double number.
-function wide_decimal.to_double(wide)
-    local significand = wide:arshift(8)
-    local rank = wide:band(0xFF):tonumber()
+function wide_decimal.to_double(val)
+    local significand = val:arshift(8)
+    local rank = val:band(0xFF):tonumber()
 
     if (rank == 0) then
-        -- Special format.
+        -- Special cases.
         return const.nf_double[(significand:band(0x03) + 1):tonumber()]
     end
     if (rank == const.BIAS) then
