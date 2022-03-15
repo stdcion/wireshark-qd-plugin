@@ -70,6 +70,12 @@ data_struct.field_flag = {
     SERIAL_OBJECT = 0xF0
 }
 
+-- Mask for filed type.
+data_struct.field_mask = {
+    SERIALIZATION = 0x0F,
+    REPRESENTATION = 0xF0,
+}
+
 -- List of field type.
 data_struct.field_type = {
     VOID = data_struct.field_base.VOID,
