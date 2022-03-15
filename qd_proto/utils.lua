@@ -316,4 +316,15 @@ function utils.millis_to_nstime(millis)
     return NSTime(seconds, nanoseconds_remainder)
 end
 
+-- Inserts substring into string on certain position number of counts.
+-- @param str The source string.
+-- @param sub The source substring.
+-- @param pos The position in source string.
+-- @param count The number of counts.
+-- @return The result string.
+function utils.insert_str(str, sub, pos, count)
+    for i = 1, count, 1 do str = str:gsub('()', {[pos] = sub}) end
+    return str
+end
+
 return utils
