@@ -327,4 +327,11 @@ function utils.insert_str(str, sub, pos, count)
     return str
 end
 
+-- Checks if a flag is set.
+-- @param flags The bit flags.
+-- @param flag The flag for check.
+-- @return true - if if the flag is set;
+--         false - if not.
+function utils.is_flag_set(flags, flag) return bit.band(flags, flag) ~= 0 end
+
 return utils
