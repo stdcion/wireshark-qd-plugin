@@ -332,6 +332,33 @@ end
 -- @param flag The flag for check.
 -- @return true - if if the flag is set;
 --         false - if not.
-function utils.is_flag_set(flags, flag) return bit.band(flags, flag) ~= 0 end
+function utils.is_flag_set(flags, flag)
+    if (flags == nil or flag == nil) then return false end
+    return bit.band(flags, flag) ~= 0
+end
+
+-- Converts an bit flags from enum to a string.
+-- @param enum_table The enum table.
+-- @param flags  The flags value.
+-- @return string - if the conversion was successful;
+--         nil -    if not.
+function utils.bit_flags_to_str(enum_table, flags)
+    local str_table = utils.enum_tbl_to_str_tbl(enum_table)
+    if (str_table == nil) then return nil end
+    local str = ""
+    local mask = 1
+    while (flags ~= 0) do
+        local mask_val = bit.band(flags, mask)
+        if (mask_val ~= 0) then
+            if (utils.is_empty_str(str) == false) then
+                str = str .. " | "
+            end
+            str = str .. str_table[mask_val]
+            flags = bit.band(flags, bit.bnot(mask_val))
+        end
+        mask = bit.lshift(mask, 1)
+    end
+    return str
+end
 
 return utils
