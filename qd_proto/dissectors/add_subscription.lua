@@ -61,9 +61,9 @@ function add_subscription.dissect(type, proto, tvb_buf, packet_info, subtree)
     local res, err = pcall(function()
         symbol_reader:reset()
         local br = binary_reader:new(tvb_buf, 0)
-        while br:is_empty() ~= true do display(br, subtree, type) end
+        while (br:is_empty() ~= true) do display(br, subtree, type) end
     end)
-    if (res == false) then dbg.error(dbg.file(), dbg.line(), err) end
+    if (res == false) then error(err) end
 end
 
 return add_subscription
