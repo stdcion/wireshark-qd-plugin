@@ -153,7 +153,10 @@ function compact_reader.read_byte_array(stream)
     local range = nil
     local arr = {}
     local arr_len = compact_reader.read_compact_long(stream)
-    if arr_len > 0 then arr = stream:read_bytes(arr_len):raw() end
+    if arr_len > 0 then
+        arr = stream:read_bytes(arr_len:tonumber())
+        arr = arr:bytes()
+    end
 
     range = stream:get_range(start_pos, stream:get_current_pos())
     return arr, range
