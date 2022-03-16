@@ -9,6 +9,7 @@ local heartbeat = require("qd_proto.dissectors.heartbeat")
 local describe_records = require("qd_proto.dissectors.describe_records")
 local add_subscription = require("qd_proto.dissectors.add_subscription")
 local data = require("qd_proto.dissectors.data")
+local remove_subscription = require("qd_proto.dissectors.remove_subscription")
 
 -- Creates the protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
@@ -18,6 +19,7 @@ utils.append_to_table(qd_proto.fields, heartbeat.ws_fields)
 utils.append_to_table(qd_proto.fields, describe_records.ws_fields)
 utils.append_to_table(qd_proto.fields, add_subscription.ws_fields)
 utils.append_to_table(qd_proto.fields, data.ws_fields)
+utils.append_to_table(qd_proto.fields, remove_subscription.ws_fields)
 
 -- Called Wireshark when plugin loading.
 function qd_proto.init()
@@ -71,6 +73,10 @@ local function parse_message(proto, type, tvb_buf, packet_info, subtree)
             type == data_struct.qd_type.HISTORY_DATA or
             type == data_struct.qd_type.STREAM_DATA) then
         data.dissect(proto, tvb_buf, packet_info, subtree, describe_records)
+    elseif (type == data_struct.qd_type.TICKER_REMOVE_SUBSCRIPTION or
+            type == data_struct.qd_type.HISTORY_REMOVE_SUBSCRIPTION or
+            type == data_struct.qd_type.STREAM_REMOVE_SUBSCRIPTION) then
+        remove_subscription.dissect(proto, tvb_buf, packet_info, subtree)
     end
 end
 
