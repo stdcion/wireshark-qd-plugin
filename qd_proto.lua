@@ -8,6 +8,7 @@ local data_struct = require("qd_proto.data_struct")
 local heartbeat = require("qd_proto.dissectors.heartbeat")
 local describe_records = require("qd_proto.dissectors.describe_records")
 local add_subscription = require("qd_proto.dissectors.add_subscription")
+local data = require("qd_proto.dissectors.data")
 
 -- Creates the protocol object.
 local qd_proto = Proto("QD", "Quote Distribution protocol")
@@ -16,6 +17,7 @@ utils.append_to_table(qd_proto.fields, qd.ws_fields)
 utils.append_to_table(qd_proto.fields, heartbeat.ws_fields)
 utils.append_to_table(qd_proto.fields, describe_records.ws_fields)
 utils.append_to_table(qd_proto.fields, add_subscription.ws_fields)
+utils.append_to_table(qd_proto.fields, data.ws_fields)
 
 -- Called Wireshark when plugin loading.
 function qd_proto.init()
@@ -65,6 +67,10 @@ local function parse_message(proto, type, tvb_buf, packet_info, subtree)
             type == data_struct.qd_type.HISTORY_ADD_SUBSCRIPTION or
             type == data_struct.qd_type.STREAM_ADD_SUBSCRIPTION) then
         add_subscription.dissect(type, proto, tvb_buf, packet_info, subtree)
+    elseif (type == data_struct.qd_type.TICKER_DATA or
+            type == data_struct.qd_type.HISTORY_DATA or
+            type == data_struct.qd_type.STREAM_DATA) then
+        data.dissect(proto, tvb_buf, packet_info, subtree, describe_records)
     end
 end
 
