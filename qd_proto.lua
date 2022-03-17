@@ -6,6 +6,7 @@ local utils = require("qd_proto.utils")
 local qd = require("qd_proto.dissectors.qd")
 local data_struct = require("qd_proto.data_struct")
 local heartbeat = require("qd_proto.dissectors.heartbeat")
+local describe_protocol = require("qd_proto.dissectors.describe_protocol")
 local describe_records = require("qd_proto.dissectors.describe_records")
 local add_subscription = require("qd_proto.dissectors.add_subscription")
 local data = require("qd_proto.dissectors.data")
@@ -16,6 +17,7 @@ local qd_proto = Proto("QD", "Quote Distribution protocol")
 -- Registers the fields for Wireshark.
 utils.append_to_table(qd_proto.fields, qd.ws_fields)
 utils.append_to_table(qd_proto.fields, heartbeat.ws_fields)
+utils.append_to_table(qd_proto.fields, describe_protocol.ws_fields)
 utils.append_to_table(qd_proto.fields, describe_records.ws_fields)
 utils.append_to_table(qd_proto.fields, add_subscription.ws_fields)
 utils.append_to_table(qd_proto.fields, data.ws_fields)
@@ -63,6 +65,8 @@ local function parse_message(proto, type, tvb_buf, packet_info, subtree)
     type = type.val_uint
     if (type == data_struct.qd_type.HEARTBEAT) then
         heartbeat.dissect(proto, tvb_buf, packet_info, subtree)
+    elseif (type == data_struct.qd_type.DESCRIBE_PROTOCOL) then
+        describe_protocol.dissect(proto, tvb_buf, packet_info, subtree)
     elseif (type == data_struct.qd_type.DESCRIBE_RECORDS) then
         describe_records.dissect(proto, tvb_buf, packet_info, subtree)
     elseif (type == data_struct.qd_type.TICKER_ADD_SUBSCRIPTION or
