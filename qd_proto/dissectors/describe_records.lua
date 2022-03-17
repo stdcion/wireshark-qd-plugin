@@ -7,6 +7,9 @@ local dbg = require("qd_proto.dbg")
 
 local describe_records = {}
 
+-- Map record digest.
+describe_records.record_digest = {}
+
 -- List of DESCRIBE_RECORDS fields to display in Wireshark.
 describe_records.ws_fields = {
     record = ProtoField.string("qd.describe_records.record", "Record",
@@ -217,6 +220,22 @@ local function display_record(record, tvb_buf, tree)
     display_fields(record.fields, tvb_buf, record_tree)
 end
 
+-- Gets record digest byte record ID.
+-- @param rid The record ID.
+-- @return The record digest or nil, if record if was not found.
+function describe_records.get_record_digest(rid)
+    local record_digest = {name = nil, fields = {}}
+    local fields = describe_records.record_digest[rid].fields.arr
+    if fields == nil then return nil end
+    for index, value in ipairs(describe_records.record_digest[rid].fields.arr) do
+        record_digest.fields[index] = {}
+        record_digest.fields[index].name = value.name.val
+        record_digest.fields[index].type = value.type.val
+    end
+    record_digest.name = describe_records.record_digest[rid].name.val
+    return record_digest
+end
+
 -- Dissects the DESCRIBE_RECORD message.
 -- @param proto The protocol object.
 -- @param tvb_buf The input buffer.
@@ -230,6 +249,8 @@ function describe_records.dissect(proto, tvb_buf, packet_info, subtree)
             dbg.error(dbg.file(), dbg.line(), "Record parsing error.")
             break
         end
+        -- Fills record digest.
+        describe_records.record_digest[record.id.val] = record
         display_record(record, tvb_buf, subtree)
         off = record.next_pos
     end

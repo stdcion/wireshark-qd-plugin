@@ -49,6 +49,7 @@ end
 -- @note If actual encoded value does not fit into an int (32-bit) data type,
 --       then it is truncated to int value (only lower 32 bits are returned)
 -- @param stream Represents the input buffer.
+-- @throws BufferOutOfRange.
 -- @return value - the read value,
 --         range - represents the range of the buf
 --                 where the value is stored.
@@ -73,8 +74,8 @@ function compact_reader.read_compact_int(stream)
         n = bit.arshift(n, 11)
     elseif compact_len == 4 then
         n = bit.lshift(n, 24)
-        n = n + bit.lshift(stream:read_uint16(), 16)
-        n = n + stream:read_uint8()
+        n = n + bit.lshift(stream:read_uint8(), 16)
+        n = n + stream:read_uint16()
         n = bit.lshift(n, 4)
         n = bit.arshift(n, 4)
     else
@@ -93,6 +94,7 @@ end
 
 -- Reads an long value from the data input in a compact format.
 -- @param stream Represents the input buffer.
+-- @throws BufferOutOfRange.
 -- @return value - the read value,
 --         range - represents the range of the buf
 --                 where the value is stored.
@@ -134,6 +136,27 @@ function compact_reader.read_compact_long(stream)
 
     range = stream:get_range(start_pos, stream:get_current_pos())
     return n, range
+end
+
+-- Reads a byte array from the input stream.
+-- @note The byte array in the buffer is stored in the following form:
+--       [arr_len(compact_long)] + [arr].
+--       arr_len contain the length in bytes.
+--       The return range including the arr_len field.
+-- @throws BufferOutOfRange.
+-- @param stream Represents the input buffer.
+-- @return value - the read value,
+--         range - represents the range of the buf
+--                 where the value is stored.
+function compact_reader.read_byte_array(stream)
+    local start_pos = stream:get_current_pos()
+    local range = nil
+    local arr = {}
+    local arr_len = compact_reader.read_compact_long(stream)
+    if arr_len > 0 then arr = stream:read_bytes(arr_len):raw() end
+
+    range = stream:get_range(start_pos, stream:get_current_pos())
+    return arr, range
 end
 
 return compact_reader

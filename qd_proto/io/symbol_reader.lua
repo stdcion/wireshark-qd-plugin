@@ -1,7 +1,7 @@
 -- @file symbol_reader.lua
 -- @brief Reads "symbol" data form the buffer.
 package.prepend_path(Dir.global_plugins_path())
-local penta_codec = require("qd_proto.penta_codec"):new()
+local penta_codec = require("qd_proto.format.penta_codec"):new()
 
 local SymbolReader = {}
 
@@ -29,7 +29,7 @@ function SymbolReader:new()
 
     local public = {}
 
-    -- Clears current symbol and event flags.  
+    -- Clears current symbol and event flags.
     function public:reset()
         private.mru_event_flags = private.MRU_EVENT_FLAGS
         private.symbol = nil
@@ -39,6 +39,7 @@ function SymbolReader:new()
     end
 
     -- Reads symbol from stream.
+    -- @throws BufferOutOfRange, FormatError.
     -- @param stream Represents the input buffer.
     -- @return symbol - the symbol,
     --         symbol_range - represents the range of the buf
@@ -62,7 +63,7 @@ function SymbolReader:new()
                 penta = penta + bit.lshift(stream:read_uint8(), 16)
                 penta = penta + stream:read_uint16()
             elseif (i < 0xE0) then -- reserved (first range)
-                error("Reserved bit sequence")
+                error("FormatError: Reserved bit sequence")
             elseif (i < 0xF0) then -- 20-bit
                 penta = penta + bit.lshift(bit.band(i, 0x0F), 16)
                 penta = penta + stream:read_uint16()
@@ -70,7 +71,7 @@ function SymbolReader:new()
                 penta = Int64(stream:read_uint32(), bit.band(i, 0x07))
             elseif (i == 0xF8) then -- mru event flags
                 if (private.event_flags_range ~= nil) then
-                    error("Duplicated event flags prefix")
+                    error("FormatError: Duplicated event flags prefix")
                 end
                 private.event_flags = private.mru_event_flags
                 private.event_flags_range =
@@ -79,7 +80,7 @@ function SymbolReader:new()
                 goto continue -- read next byte
             elseif (i == 0xF9) then -- new event flags
                 if (private.event_flags_range ~= nil) then
-                    error("Duplicated event flags prefix")
+                    error("FormatError: Duplicated event flags prefix")
                 end
                 private.mru_event_flags = stream:read_compact_int(stream)
                 private.event_flags = private.mru_event_flags
@@ -88,14 +89,14 @@ function SymbolReader:new()
                 start_pos = stream:get_current_pos()
                 goto continue -- read next byte
             elseif (i < 0xFC) then -- reserved (second range)
-                error("Reserved bit sequence")
+                error("FormatError: Reserved bit sequence")
             elseif (i == 0xFC) then -- UTF-8
-                private.symbol = stream:read_utf8_str()
+                private.symbol = stream:read_utf8_sequence(false) -- str len in bytes.
                 private.symbol_range = stream:get_range(start_pos,
                                                         stream:get_current_pos())
                 break
             elseif (i == 0xFD) then -- CESU-8
-                private.symbol = stream:read_cesu_str()
+                private.symbol = stream:read_utf8_sequence(true) -- str len in chars.
                 private.symbol_range = stream:get_range(start_pos,
                                                         stream:get_current_pos())
                 break
@@ -103,7 +104,7 @@ function SymbolReader:new()
                 penta = Int64(0, 0);
             else -- repeat of the last symbol
                 if (private.symbol == nil) then
-                    error("Symbol is undefined")
+                    error("FormatError: Symbol is undefined")
                 end
                 private.symbol_range = stream:get_range(start_pos,
                                                         stream:get_current_pos())
@@ -115,8 +116,8 @@ function SymbolReader:new()
             break
         end
 
-        return private.symbol, private.symbol_range, private.event_flags,
-               private.event_flags_range
+        return private.symbol, private.symbol_range,
+               private.event_flags, private.event_flags_range
     end
 
     -- #endregion

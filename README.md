@@ -2,6 +2,10 @@
 
 Lua plugin for Wireshark for parsing QD protocol.
 
+## Requirements
+
+Wireshark >= 3.6.2
+
 ## Installation
 
 Copy files (qd_proto.lua and qd_proto folder) to Wireshark *Lua Plugins* folder.
