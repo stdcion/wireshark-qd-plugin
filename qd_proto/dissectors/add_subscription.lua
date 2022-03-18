@@ -2,7 +2,6 @@
 -- @brief The TICKER_ADD_SUBSCRIPTION, HISTORY_ADD_SUBSCRIPTION and
 --        STREAM_ADD_SUBSCRIPTION message dissector.
 package.prepend_path(Dir.global_plugins_path())
-local dbg = require("qd_proto.dbg")
 local utils = require("qd_proto.utils")
 local data_struct = require("qd_proto.data_struct")
 local binary_reader = require("qd_proto.io.stream_reader")
