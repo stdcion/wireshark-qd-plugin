@@ -2,7 +2,7 @@
 -- @brief The DESCRIBE_PROTOCOL message dissector.
 package.prepend_path(Dir.global_plugins_path())
 local utils = require('qd_proto.utils')
-local binary_reader = require("qd_proto.io.stream_reader")
+local stream_reader = require("qd_proto.io.stream_reader")
 
 local describe_protocol = {}
 
@@ -93,8 +93,8 @@ end
 -- @param subtree The tree for display fields in Wireshark.
 function describe_protocol.dissect(proto, tvb_buf, packet_info, subtree)
     local res, err = pcall(function()
-        local br = binary_reader:new(tvb_buf, 0)
-        while (br:is_empty() ~= true) do display(br, subtree) end
+        local sr = stream_reader:new(tvb_buf, 0)
+        while (sr:is_empty() ~= true) do display(sr, subtree) end
     end)
     if (res == false) then error(err) end
 end
