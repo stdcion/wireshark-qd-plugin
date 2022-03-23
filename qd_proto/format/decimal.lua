@@ -46,16 +46,13 @@ function decimal.to_double(val)
     end
 
     -- Specifies an exponential power.
-    local exp = 0
+    local exp = ""
     if (power > const.UNITY_POWER) then
-        exp = "e-" .. (power - const.UNITY_POWER)
+        exp = tostring(mantissa) .. "e-" .. (power - const.UNITY_POWER)
     else
-        exp = "e" .. (const.UNITY_POWER - power)
+        exp = tostring(mantissa) .. "e" .. (const.UNITY_POWER - power)
     end
 
-    -- Converts to string with exponential form.
-    mantissa = tostring(mantissa)
-    mantissa = utils.insert_str(mantissa, exp, (#mantissa + 1), 1)
     -- Converts to number.
     return tonumber(mantissa)
 end
