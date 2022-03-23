@@ -40,6 +40,9 @@ data.ws_fields = {
                                           data_struct.event_flags.REMOVE_SYMBOL)
 }
 
+-- List of string representation field types. 
+local field_types = utils.enum_tbl_to_str_tbl(data_struct.field_type)
+
 -- Displays *_data message in Wireshark.
 -- @param stream Represents the input buffer.
 -- @param tree The tree for display.
@@ -115,8 +118,7 @@ local function display(stream, tree, describe_records)
         for _, field in pairs(fields) do
             local str = field.name
             str = str .. "("
-            str = str ..
-                      utils.enum_val_to_str(data_struct.field_type, field.type)
+            str = str .. field_types[field.type]
             str = str .. ")"
             str = str .. ": "
             str = str .. field.val
