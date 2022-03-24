@@ -2,7 +2,6 @@
 -- @brief The file contains a set of methods to work with
 -- floating-point numbers packed into long primitive type.
 package.prepend_path(Dir.global_plugins_path())
-local utils = require "qd_proto.utils"
 local wide_decimal = {}
 
 -- List of constant values.
@@ -33,18 +32,15 @@ function wide_decimal.to_double(val)
     end
 
     -- Specifies an exponential power.
-    local exp = 0
+    local exp = ""
     if (rank > const.BIAS) then
-        exp = "e-" .. (rank - const.BIAS)
+        exp = tostring(significand) .. "e-" .. (rank - const.BIAS)
     else
-        exp = "e" .. (const.BIAS - rank)
+        exp = tostring(significand) .. "e" .. (const.BIAS - rank)
     end
 
-    -- Converts to string with exponential form.
-    significand = tostring(significand)
-    significand = utils.insert_str(significand, exp, (#significand + 1), 1)
     -- Converts to number.
-    return tonumber(significand)
+    return tonumber(exp)
 end
 
 return wide_decimal

@@ -2,7 +2,7 @@
 -- @brief The TICKER_REMOVE_SUBSCRIPTION, HISTORY_REMOVE_SUBSCRIPTION and
 --        STREAM_REMOVE_SUBSCRIPTION message dissector.
 package.prepend_path(Dir.global_plugins_path())
-local binary_reader = require("qd_proto.io.stream_reader")
+local stream_reader = require("qd_proto.io.stream_reader")
 local symbol_reader = require("qd_proto.io.symbol_reader"):new()
 
 local remove_subscription = {}
@@ -43,8 +43,8 @@ end
 function remove_subscription.dissect(proto, tvb_buf, packet_info, subtree)
     local res, err = pcall(function()
         symbol_reader:reset()
-        local br = binary_reader:new(tvb_buf, 0)
-        while (br:is_empty() ~= true) do display(br, subtree) end
+        local sr = stream_reader:new(tvb_buf, 0)
+        while (sr:is_empty() ~= true) do display(sr, subtree) end
     end)
     if (res == false) then error(err) end
 end
