@@ -15,10 +15,18 @@ describe_protocol.ws_fields = {
 -- Displays properties in DESCRIBE_PROTOCOL.
 -- @param stream Represents the input buffer.
 -- @param tree The tree for display.
-local function display_properties(stream, tree)
+-- @param is_displays_properties_tab The flag indicating whether to display the tab
+--          true  - if displays properties tab;
+--          false - if not.
+local function display_properties(stream, tree, displays_properties_tab)
     local count = stream:read_compact_int()
     if (count > 0) then
-        local sub = tree:add("Properties")
+        local sub = nil
+        if displays_properties_tab then
+            sub = tree:add("Properties")
+        else
+            sub = tree
+        end
         for _ = 1, count, 1 do
             local start_pos = stream:get_current_pos()
             local key = stream:read_utf8_str()
@@ -44,9 +52,9 @@ local function display_descriptors(stream, tree, name)
             local name = stream:read_utf8_str()
 
             local range = stream:get_range(start_pos, stream:get_current_pos())
-            sub:add(range, name .. ": " .. id)
+            local descriptor_tree = sub:add(range, name .. ": " .. id)
             -- If presents.
-            display_properties(stream, tree)
+            display_properties(stream, descriptor_tree)
         end
     end
 end
@@ -78,7 +86,7 @@ local function display(stream, tree)
     tree:add(ws_fields.magic, magic_range, utils.codepoint_to_char(magic))
 
     -- Parsers and displays fields DESCRIBE_PROTOCOL. 
-    display_properties(stream, tree)
+    display_properties(stream, tree, true)
     display_descriptors(stream, tree, "Send Descriptors")
     display_descriptors(stream, tree, "Receive Descriptors")
 
