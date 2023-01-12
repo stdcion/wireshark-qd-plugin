@@ -37,7 +37,11 @@ local function display(stream, tree, type)
     if (type == data_struct.qd_type.HISTORY_ADD_SUBSCRIPTION) then
         local time, time_range = stream:read_compact_long()
         if (time ~= 0) then
-            local millis = (time:rshift(32) * 1000) + time:band(0xFFFFFFFF)
+            local seconds = time:rshift(32);
+            seconds = seconds:band(0xFFFFFFFF)
+            local millis = time:rshift(22)
+            millis = millis:band(0x3ff)
+            millis = (seconds * 1000) + millis
             local ns_time = utils.millis_to_nstime(millis)
             tree:add(ws_fields.from_time, time_range, ns_time)
         end
