@@ -121,7 +121,9 @@ local function display(stream, tree, describe_records)
             str = str .. field_types[field.type]
             str = str .. ")"
             str = str .. ": "
-            str = str .. field.val
+            if (field.val ~= nil) then
+                str = str .. field.val
+            end
             sub:add(field.range, str)
         end
     end
