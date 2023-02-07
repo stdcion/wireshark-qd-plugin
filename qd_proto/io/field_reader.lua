@@ -59,7 +59,13 @@ function field_reader.read_field(stream, type)
         if (representation == data_struct.field_flag.STRING) then
             return stream:read_utf8_str()
         else
-            return stream:read_byte_array()
+            local val, range = stream:read_byte_array()
+            if (val ~= nil) then
+                val = val:tohex()
+            else 
+                val = "null"
+            end 
+            return val, range
         end
     elseif (serialization == data_struct.field_base.UTF_CHAR_ARRAY) then
         return stream:read_utf8_char_arr()
